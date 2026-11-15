@@ -60,7 +60,7 @@ const NAMES=['NIRAV','RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','N
 const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(2600*Math.pow(1.5,i-1)),dmg:+(11*Math.pow(1.34,i-1)).toFixed(1),spd:30+3*i});
 
 // ---------- state ----------
-let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true;
+let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true,selectedPly=0;
 let best=+localStorage.getItem('nhd3_best')||0;
 function beep(f,d,type,v,slide){if(!audioOn)return;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),AC.currentTime+d);g.gain.value=v||.05;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 function rnd(a,b){return a+Math.random()*(b-a)}
@@ -68,13 +68,14 @@ function ri(a,b){return Math.floor(rnd(a,b+1))}
 function ftext(x,y,s,c){texts.push({x,y,s,c:c||'#ffe36e',t:1.2})}
 function say(s,c){banner={s,c:c||'#ff8fa0',t:2.6}}
 
-function newGame(){
+function newGame(chosenRoom){
+ if(Number.isInteger(chosenRoom)&&chosenRoom>=0&&chosenRoom<10)selectedPly=chosenRoom;
  const rooms=[];
  for(let i=0;i<10;i++){
   rooms.push({i,name:NAMES[i],alive:true,door:{lv:1,hp:DOORHP[0],max:DOORHP[0]},bedLv:1,
    coins:0,turrets:[null,null,null],smart:rnd(.35,1),actT:rnd(0,1.5),sleepPh:rnd(0,6),isPlayer:false,gone:0});
  }
- PLY=ri(0,9);
+ PLY=selectedPly;
  rooms[PLY].isPlayer=true;rooms[PLY].coins=120;rooms[PLY].name='NIRAV';
  // make sure a room named NIRAV is not duplicated: rename if PLY was not 0
  for(let i=0;i<10;i++){if(i!==PLY&&rooms[i].name==='NIRAV')rooms[i].name='CHINTU'}
@@ -345,10 +346,14 @@ function hpBar(x,y,w,h,frac,c){
 }
 
 function drawMap(){
- ctx.fillStyle='#100c22';ctx.fillRect(0,HUD,W,mapH);
- // corridor
- ctx.fillStyle='#1d1636';ctx.fillRect(corX,HUD,corW,mapH);
- ctx.fillStyle='#241c44';ctx.fillRect(corX+corW*.34,HUD,corW*.32,mapH);
+ const floor=ctx.createLinearGradient(0,HUD,W,H);floor.addColorStop(0,'#1b1433');floor.addColorStop(.48,'#100c22');floor.addColorStop(1,'#1a1230');
+ ctx.fillStyle=floor;ctx.fillRect(0,HUD,W,mapH);
+ // corridor with raised beveled wall edges
+ const cg=ctx.createLinearGradient(corX,0,corX+corW,0);cg.addColorStop(0,'#130e27');cg.addColorStop(.18,'#342652');cg.addColorStop(.5,'#261e43');cg.addColorStop(.82,'#342652');cg.addColorStop(1,'#130e27');
+ ctx.fillStyle=cg;ctx.fillRect(corX,HUD,corW,mapH);
+ ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(corX+5,HUD,2,mapH);ctx.fillRect(corX+corW-7,HUD,2,mapH);
+ ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(corX+11,HUD,2,mapH);ctx.fillRect(corX+corW-13,HUD,2,mapH);
+ ctx.fillStyle='rgba(42,32,70,.65)';ctx.fillRect(corX+corW*.34,HUD,corW*.32,mapH);
  ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;
  for(let y=HUD;y<H;y+=26){ctx.beginPath();ctx.moveTo(corX+corW*.34,y);ctx.lineTo(corX+corW*.66,y);ctx.stroke()}
  // lamps
@@ -366,12 +371,17 @@ function drawMap(){
 function drawRoom(rm){
  const r=roomRect(rm.i);
  const dead=!rm.alive;
- // floor
- ctx.fillStyle=dead?'#0d0a18':((rm.row+rm.side)%2?'#221a40':'#1e1738');
- ctx.fillRect(r.x+1,r.y+1,r.w-2,r.h-2);
- ctx.strokeStyle=rm.isPlayer&&!dead?'rgba(255,213,74,.85)':'rgba(0,0,0,.55)';
- ctx.lineWidth=rm.isPlayer&&!dead?2.4:1.4;
- ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-2);
+ // shallow 3D room slabs: soft cast shadow, lit floor, beveled wall edges
+ ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(r.x+2,r.y+5,r.w-3,r.h-5);
+ const floor=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);
+ floor.addColorStop(0,dead?'#171121':(rm.row%2?'#332852':'#2d2449'));
+ floor.addColorStop(.52,dead?'#0d0a18':(rm.row%2?'#211a36':'#201932'));
+ floor.addColorStop(1,dead?'#0b0914':'#171327');
+ ctx.fillStyle=floor;ctx.fillRect(r.x+1,r.y+1,r.w-2,r.h-4);
+ ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(r.x+2,r.y+2,r.w-4,2);
+ ctx.fillStyle='rgba(0,0,0,.26)';ctx.fillRect(r.x+2,r.y+r.h-4,r.w-4,3);
+ ctx.strokeStyle=rm.isPlayer&&!dead?'rgba(255,213,74,.95)':'rgba(155,140,205,.22)';
+ ctx.lineWidth=rm.isPlayer&&!dead?2.4:1.1;ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-4);
  // name + zzz
  ctx.textAlign='left';ctx.textBaseline='alphabetic';
  ctx.font='800 10px system-ui';
@@ -398,8 +408,10 @@ function drawRoom(rm){
  const cols=['#6b3d1f','#7a4a3a','#5a5f6e','#3f6b8a','#8a6a2f'];
  const cols2=['#8a5028','#9a6248','#7a8092','#5a92b8','#c9a24a'];
  if(rm.door.hp>0){
-  ctx.fillStyle=cols[rm.door.lv-1];ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
-  ctx.fillStyle=cols2[rm.door.lv-1];ctx.fillRect(dp.x+3,dp.y+4,dp.w-6,dp.h-8);
+  ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(dp.x-2,dp.y+3,dp.w+4,dp.h);
+  const dg=ctx.createLinearGradient(dp.x,dp.y,dp.x+dp.w,dp.y);dg.addColorStop(0,'#24162b');dg.addColorStop(.18,cols[rm.door.lv-1]);dg.addColorStop(.54,cols2[rm.door.lv-1]);dg.addColorStop(.84,cols[rm.door.lv-1]);dg.addColorStop(1,'#261829');
+  ctx.fillStyle=dg;ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
+  ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(dp.x+3,dp.y+4,2,dp.h-8);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(dp.x+dp.w-4,dp.y+4,2,dp.h-8);
   if(rm.door.lv>=3){ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(dp.x+2,dp.y+dp.h/2);ctx.lineTo(dp.x+dp.w-2,dp.y+dp.h/2);ctx.stroke()}
  }else{
   ctx.fillStyle='#1a1024';ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
@@ -565,6 +577,30 @@ function sheetTap(x,y){
 function y0OfSheet(){return H-220}
 
 // ---------- title / end ----------
+function drawSelect(){
+ ctx.fillStyle='#0c0918';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#15102a';ctx.fillRect(0,0,W,HUD);
+ ctx.fillStyle='#ffe36e';ctx.font='900 18px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('APNA ROOM CHUNO',W/2,19);
+ ctx.fillStyle='#bdb1df';ctx.font='600 11px system-ui';ctx.fillText('Jis kamre par tap karoge, wahi tumhara room hoga',W/2,41);
+ // ten raised room cards flank a shaded central corridor
+ const corridor=ctx.createLinearGradient(corX,0,corX+corW,0);corridor.addColorStop(0,'#120e22');corridor.addColorStop(.5,'#362b55');corridor.addColorStop(1,'#120e22');ctx.fillStyle=corridor;ctx.fillRect(corX,HUD,corW,mapH);
+ for(let i=0;i<10;i++){
+  const r=roomRect(i),isSel=i===selectedPly;
+  ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(r.x+3,r.y+6,r.w-4,r.h-6);
+  const g=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g.addColorStop(0,isSel?'#66502a':'#3a3158');g.addColorStop(.45,isSel?'#302543':'#241e38');g.addColorStop(1,'#171326');
+  ctx.fillStyle=g;ctx.fillRect(r.x+2,r.y+2,r.w-4,r.h-7);
+  ctx.strokeStyle=isSel?'#ffd54a':'rgba(198,183,240,.48)';ctx.lineWidth=isSel?2.5:1.4;ctx.strokeRect(r.x+2,r.y+2,r.w-4,r.h-7);
+  ctx.fillStyle=isSel?'#ffd54a':'rgba(255,255,255,.16)';ctx.fillRect(r.x+5,r.y+5,r.w-10,2);
+  const label=i===selectedPly?'NIRAV':(NAMES[i]==='NIRAV'?'CHINTU':NAMES[i]);
+  ctx.fillStyle=isSel?'#ffe36e':'#e8e1ff';ctx.font='800 12px system-ui';ctx.textAlign=r.side?'right':'left';ctx.fillText(label,r.side?r.x+r.w-9:r.x+9,r.y+20);
+  ctx.fillStyle='rgba(225,216,255,.58)';ctx.font='700 9px system-ui';ctx.textAlign='center';ctx.fillText('ROOM '+(i+1),r.x+r.w/2,r.y+36);
+  // bed and tiny doorway hint give the cards a room-like 3D silhouette
+  const dp=doorPos(i),doorX=dp.x,doorY=dp.y;ctx.fillStyle='rgba(0,0,0,.34)';ctx.fillRect(doorX,doorY,dp.w,dp.h);ctx.fillStyle=isSel?'#d59c43':'#806a9e';ctx.fillRect(doorX+3,doorY+3,dp.w-6,dp.h-6);
+  ctx.fillStyle='#354f9c';ctx.fillRect(r.side?r.x+r.w-55:r.x+9,r.y+r.h-48,46,28);ctx.fillStyle='rgba(255,255,255,.55)';ctx.fillRect(r.side?r.x+r.w-52:r.x+12,r.y+r.h-45,13,8);
+ }
+ ctx.fillStyle='rgba(255,227,110,.9)';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText('TAP ANY ROOM TO START',W/2,H-12);
+}
+
 function drawTitle(){
  ctx.fillStyle='#0b0a1a';ctx.fillRect(0,0,W,H);
  const t=performance.now()/1000;
@@ -610,8 +646,16 @@ function drawEnd(){
 
 // ---------- input ----------
 function tap(x,y){
- if(state==='title'||state==='win'||state==='lose'){
-  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);newGame()}
+ if(state==='title'){
+  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);state='select'}
+  return;
+ }
+ if(state==='win'||state==='lose'){
+  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);state='select'}
+  return;
+ }
+ if(state==='select'){
+  for(let i=0;i<10;i++){const r=roomRect(i);if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){selectedPly=i;beep(500,.08,'sine',.05);newGame(i);return}}
   return;
  }
  if(state!=='play')return;
@@ -637,6 +681,7 @@ function frame(now){
  if(state==='play'&&G)update(dt);
  ctx.clearRect(0,0,W,H);
  if(state==='title')drawTitle();
+ else if(state==='select')drawSelect();
  else if(state==='play'){drawMap();drawGhost();drawParts();drawHUD();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
@@ -652,9 +697,11 @@ window.__h={
  get G(){return G},
  get sheet(){return sheet?{name:sheet.rm.name,isPlayer:sheet.rm.isPlayer}:null},
  get PLY(){return PLY},
+ get selectedPly(){return selectedPly},
  roomRect,doorPos,bedPos,
  start:newGame,
  tap,
+ chooseRoom:(i)=>{selectedPly=i;newGame(i)},
  ownBed:()=>{const rm=player();return upgBed(rm)},
  ownDoor:()=>{const rm=player();return upgDoor(rm)},
  ownBuild:(k)=>buildTur(player(),k),
