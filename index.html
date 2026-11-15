@@ -703,7 +703,7 @@ function drawCombatStatus(){
  }
  const gh=G.ghost;
  if(gh&&gh.mode==='attack'){
-  const x=gh.x,y=gh.y-49,w=78;
+  const x=gh.x,y=gh.y-73,w=78;
   ctx.fillStyle='rgba(7,8,20,.88)';rr(x-w/2,y-2,w,23,5);ctx.fill();
   ctx.fillStyle='#f0e7ff';ctx.font='800 8px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText('BHOOT Lv'+gh.lv+'  '+Math.ceil(gh.hp)+'/'+gh.max,x,y+5);
