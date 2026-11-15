@@ -20,7 +20,7 @@ addEventListener('orientationchange',()=>setTimeout(resize,120));
 
 // ---------- layout ----------
 const HUD=56;
-let corX,corW,roomW,rowH,mapH,PLY;
+let corX,corW,roomW,rowH,mapH,PLY=-1;
 function layout(){
  mapH=H-HUD;
  corW=Math.max(50,Math.min(70,W*.17));
@@ -61,7 +61,9 @@ const NAMES=['NIRAV','RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','N
 const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(2600*Math.pow(1.5,i-1)),dmg:+(11*Math.pow(1.34,i-1)).toFixed(1),spd:30+3*i});
 
 // ---------- state ----------
-let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true,selectedPly=0;
+let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true;
+let stick={x:0,y:0},movePointer=null,pDown=null;
+const PLAYER_R=7,MOVE_LIMIT=22,SETTLE_TIME=1.15,JOY_R=42;
 let best=+localStorage.getItem('nhd3_best')||0;
 function beep(f,d,type,v,slide){if(!audioOn)return;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),AC.currentTime+d);g.gain.value=v||.05;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 function rnd(a,b){return a+Math.random()*(b-a)}
@@ -69,26 +71,82 @@ function ri(a,b){return Math.floor(rnd(a,b+1))}
 function ftext(x,y,s,c){texts.push({x,y,s,c:c||'#ffe36e',t:1.2})}
 function say(s,c){banner={s,c:c||'#ff8fa0',t:2.6}}
 
-function newGame(chosenRoom){
- if(Number.isInteger(chosenRoom)&&chosenRoom>=0&&chosenRoom<10)selectedPly=chosenRoom;
- const rooms=[];
+function newGame(){
+ const aiNames=['RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
+ const vacancy=ri(0,9),rooms=[];let a=0;
  for(let i=0;i<10;i++){
-  rooms.push({i,name:NAMES[i],alive:true,door:{lv:1,hp:DOORHP[0],max:DOORHP[0]},bedLv:1,
+  const occupied=i!==vacancy;
+  rooms.push({i,row:i%5,name:occupied?aiNames[a++]:'KHALI',occupied,alive:true,door:{lv:1,hp:DOORHP[0],max:DOORHP[0]},bedLv:1,
    coins:0,turrets:[null,null,null],smart:rnd(.35,1),actT:rnd(0,1.5),sleepPh:rnd(0,6),isPlayer:false,gone:0});
  }
- PLY=selectedPly;
- rooms[PLY].isPlayer=true;rooms[PLY].coins=120;rooms[PLY].name='NIRAV';
- // make sure a room named NIRAV is not duplicated: rename if PLY was not 0
- for(let i=0;i<10;i++){if(i!==PLY&&rooms[i].name==='NIRAV')rooms[i].name='CHINTU'}
+ PLY=-1;
  G={t:0,rooms,lastPlyAtk:-99,
   ghost:{lv:1,hp:GLV[1].hp,max:GLV[1].hp,x:W/2,y:-40,mode:'spawn',target:-1,lastTarget:-1,ph:0,att:0,fl:0,regenCd:0,ax:W/2,ay:HUD+30},
-  lvTimer:50,shake:0,aliveCount:10,dmgDone:0,thud:0};
- parts=[];texts=[];sheet=null;
- say('Bhoot aa raha hai... apna room taiyaar karo!','#9ad7ff');
- state='play';
+  lvTimer:50,shake:0,aliveCount:10,dmgDone:0,thud:0,phaseTimer:MOVE_LIMIT,emptyIndex:vacancy,runner:{x:W/2,y:H-44,coins:120,walk:0,settleT:0,fromX:0,fromY:0,toX:0,toY:0}};
+ parts=[];texts=[];sheet=null;stick={x:0,y:0};movePointer=null;
+ say('Joystick se chalo, kisi khule darwaze se room mein jao!','#9ad7ff');
+ state='move';
 }
-function aliveRooms(){return G.rooms.filter(r=>r.alive)}
-function player(){return G.rooms[PLY]}
+function startDefense(){
+ if(PLY<0){const empty=G.rooms.find(r=>!r.occupied),idx=empty?empty.i:G.emptyIndex,rm=G.rooms[idx],cp=corridorDoorPoint(rm),ip=insideDoorPoint(rm);G.runner.autoRoom=idx;G.runner.path=[cp,ip];G.runner.pathIndex=0;state='autoenter';return}
+ state='play';G.phaseTimer=0;G.lastPlyAtk=-99;
+ G.ghost.mode='spawn';G.ghost.x=W/2;G.ghost.y=-40;G.ghost.target=-1;G.ghost.lastTarget=-1;
+ G.lvTimer=50;say('Defense shuru! Bhoot tumhare peeche aayega!','#ffbd5b');
+}
+function claimRoom(idx,automatic=false){
+ if(PLY>=0||idx<0||idx>=10)return;
+ const target=G.rooms[idx],vacancy=G.rooms.find(r=>!r.occupied);
+ if(!target||!target.alive)return;
+ if(target.occupied&&vacancy&&vacancy!==target){
+  for(const k of ['name','alive','door','bedLv','coins','turrets','smart','actT','sleepPh','gone'])vacancy[k]=target[k];
+  vacancy.occupied=true;vacancy.isPlayer=false;
+ }
+ target.occupied=true;target.alive=true;target.isPlayer=true;target.name='NIRAV';
+ target.coins=Math.max(120,G.runner.coins);target.door={lv:1,hp:DOORHP[0],max:DOORHP[0]};target.bedLv=1;target.turrets=[null,null,null];
+ target.smart=1;target.actT=0;target.gone=0;PLY=idx;G.emptyIndex=vacancy&&vacancy!==target?vacancy.i:-1;
+ const bp=bedPos(idx);G.runner.fromX=G.runner.x;G.runner.fromY=G.runner.y;G.runner.toX=bp.cx;G.runner.toY=bp.cy;G.runner.settleT=0;
+ state='settle';stick={x:0,y:0};movePointer=null;
+ say(automatic?'Room mil gaya - defense shuru!':'NIRAV andar aa gaya - room set ho raha hai!','#ffe36e');
+}
+function roomForPoint(x,y){
+ if(x>=corX&&x<=corX+corW)return -1;
+ const row=Math.max(0,Math.min(4,Math.floor((y-HUD)/rowH)));
+ return (x>corX+corW?5:0)+row;
+}
+function moveRunner(dt){
+ if(!G)return;
+ if(state==='autoenter'){const p=G.runner,path=p.path||[],goal=path[p.pathIndex];if(goal){const dx=goal.x-p.x,dy=goal.y-p.y,d=Math.hypot(dx,dy),step=105*dt;p.walk+=dt*10;if(d<=step+1){p.x=goal.x;p.y=goal.y;p.pathIndex++;if(p.pathIndex>=path.length)claimRoom(p.autoRoom,true)}else{p.x+=dx/d*step;p.y+=dy/d*step}}for(const rm of G.rooms)if(rm.occupied&&!rm.isPlayer)aiTick(rm,dt);return}
+ if(state!=='move')return;
+ let dx=stick.x,dy=stick.y;
+ if(moveKeys.left)dx-=1;if(moveKeys.right)dx+=1;if(moveKeys.up)dy-=1;if(moveKeys.down)dy+=1;
+ const mag=Math.hypot(dx,dy);if(mag>1){dx/=mag;dy/=mag}
+ const p=G.runner,spd=112;
+ if(mag>.08){p.walk+=dt*10;const nx=Math.max(PLAYER_R,Math.min(W-PLAYER_R,p.x+dx*spd*dt));let allowX=true;
+  const left=corX,right=corX+corW,row=Math.max(0,Math.min(4,Math.floor((p.y-HUD)/rowH))),gateY=HUD+rowH*(row+.5),gate=Math.abs(p.y-gateY)<=22-PLAYER_R;
+  const inCorr=p.x>=left-PLAYER_R&&p.x<=right+PLAYER_R;
+  if(inCorr&&nx<left+PLAYER_R&&!gate)allowX=false;
+  if(inCorr&&nx>right-PLAYER_R&&!gate)allowX=false;
+  if(!inCorr){const side=p.x<left?-1:1,bound=side<0?left:right;
+   if(side<0&&nx>bound-PLAYER_R&&!gate)allowX=false;
+   if(side>0&&nx<bound+PLAYER_R&&!gate)allowX=false;
+  }
+  if(allowX)p.x=nx;
+  let ny=p.y+dy*spd*dt;const zone=roomForPoint(p.x,p.y);
+  if(zone<0)ny=Math.max(HUD+PLAYER_R,Math.min(H-PLAYER_R,ny));
+  else{const rr=roomRect(zone);ny=Math.max(rr.y+PLAYER_R,Math.min(rr.y+rr.h-PLAYER_R,ny));
+   const minX=rr.side?corX+corW+PLAYER_R:PLAYER_R,maxX=rr.side?W-PLAYER_R:corX-PLAYER_R;
+   p.x=Math.max(minX,Math.min(maxX,p.x));}
+  p.y=ny;
+  const idx=roomForPoint(p.x,p.y);if(idx>=0)claimRoom(idx,false);
+ }else p.walk*=.85;
+ G.runner.coins+=2*dt;
+ G.phaseTimer-=dt;
+ for(const rm of G.rooms)if(rm.occupied&&!rm.isPlayer)aiTick(rm,dt);
+ if(G.phaseTimer<=0&&state==='move')startDefense();
+}
+
+function aliveRooms(){return G.rooms.filter(r=>r.alive&&r.occupied)}
+function player(){return PLY>=0?G.rooms[PLY]:null}
 function turDmg(t){return TURLV[t.lv-1].dmg}
 
 // ---------- economy / actions (shared shape for player + AI) ----------
@@ -123,6 +181,7 @@ function ownAct(fn,okMsg){
 
 // ---------- AI ----------
 function aiTick(rm,dt){
+ if(!rm.occupied||rm.isPlayer)return;
  rm.coins+=income(rm)*dt;
  rm.actT-=dt;
  if(rm.actT>0)return;
@@ -172,7 +231,7 @@ function pickTarget(){
  const gh=G.ghost,alive=aliveRooms();if(!alive.length)return;
  const pm=player();
  // the ghost comes for YOU regularly - first target is always the player, then at least every ~30s
- if(pm.alive&&G.t-G.lastPlyAtk>40){setAtk(pm);return}
+ if(pm&&pm.alive&&G.t-G.lastPlyAtk>40){setAtk(pm);return}
  let bestRm=null,bestSc=1e9;
  for(const rm of alive){
   if(rm.isPlayer&&gh.lastTarget===PLY)continue; // just hit you - give you a breather, hit someone else
@@ -290,8 +349,14 @@ function lvlUp(){
 // ---------- update ----------
 function update(dt){
  G.t+=dt;
+ if(state==='move'||state==='autoenter'){moveRunner(dt);return}
+ if(state==='settle'){
+  for(const rm of G.rooms)if(rm.occupied&&!rm.isPlayer)aiTick(rm,dt);
+  const p=G.runner;p.settleT=Math.min(1,p.settleT+dt/SETTLE_TIME);const u=p.settleT*(2-p.settleT);p.x=p.fromX+(p.toX-p.fromX)*u;p.y=p.fromY+(p.toY-p.fromY)*u;
+  if(p.settleT>=1)startDefense();return
+ }
  for(const rm of G.rooms){
-  if(!rm.alive)continue;
+  if(!rm.alive||!rm.occupied)continue;
   if(rm.isPlayer)rm.coins+=income(rm)*dt;
   else aiTick(rm,dt);
   // door slowly repairs itself while the ghost is not pounding it
@@ -368,6 +433,9 @@ function drawMap(){
  }
  // rooms
  for(const rm of G.rooms)drawRoom(rm);
+ // overhead vignette, wall-side shadows and a soft pool of corridor light add depth without 3D APIs.
+ const vig=ctx.createRadialGradient(W/2,H*.48,Math.min(W,H)*.12,W/2,H*.48,Math.max(W,H)*.72);vig.addColorStop(0,'rgba(2,2,8,0)');vig.addColorStop(1,'rgba(2,2,8,.46)');ctx.fillStyle=vig;ctx.fillRect(0,HUD,W,mapH);
+ ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(0,HUD,3,mapH);ctx.fillRect(W-3,HUD,3,mapH);
 }
 function drawRoom(rm){
  const r=roomRect(rm.i);
@@ -386,10 +454,10 @@ function drawRoom(rm){
  // name + zzz
  ctx.textAlign='left';ctx.textBaseline='alphabetic';
  ctx.font='800 10px system-ui';
- ctx.fillStyle=dead?'rgba(255,120,120,.8)':(rm.isPlayer?'#ffd54a':'rgba(210,200,255,.85)');
+ ctx.fillStyle=dead?'rgba(255,120,120,.8)':(!rm.occupied?'#8fe6ff':(rm.isPlayer?'#ffd54a':'rgba(210,200,255,.85)'));
  const nx=r.side?r.x+r.w-8-ctx.measureText(rm.name).width:r.x+8;
- ctx.fillText(rm.name,nx,r.y+15);
- if(!dead){
+ ctx.fillText(rm.occupied?rm.name:'KHALI',nx,r.y+15);
+ if(!dead&&rm.occupied){
   const zo=Math.sin(G.t*1.4+rm.sleepPh)*3;
   ctx.fillStyle='rgba(157,255,176,.75)';ctx.font='600 9px system-ui';
   ctx.fillText('z z',nx+2,r.y+27+zo);
@@ -408,7 +476,12 @@ function drawRoom(rm){
  const dp=doorPos(rm.i);
  const cols=['#6b3d1f','#7a4a3a','#5a5f6e','#3f6b8a','#8a6a2f'];
  const cols2=['#8a5028','#9a6248','#7a8092','#5a92b8','#c9a24a'];
- if(rm.door.hp>0){
+ if(state==='move'||state==='autoenter'){
+  ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
+  ctx.strokeStyle='rgba(135,233,255,.65)';ctx.lineWidth=2;ctx.strokeRect(dp.x+1,dp.y+1,dp.w-2,dp.h-2);
+  const leafX=r.side?dp.x+dp.w-7:dp.x-dp.w+7;const lg=ctx.createLinearGradient(leafX,dp.y,leafX+dp.w,dp.y);lg.addColorStop(0,'#271b34');lg.addColorStop(.45,'#b17b49');lg.addColorStop(1,'#392531');ctx.fillStyle=lg;ctx.fillRect(leafX,dp.y+3,dp.w-2,dp.h-6);
+  ctx.fillStyle='#ffe6a8';ctx.beginPath();ctx.arc(r.side?leafX+4:leafX+dp.w-5,dp.cy,1.6,0,6.3);ctx.fill();
+ }else if(rm.door.hp>0){
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(dp.x-2,dp.y+3,dp.w+4,dp.h);
   const dg=ctx.createLinearGradient(dp.x,dp.y,dp.x+dp.w,dp.y);dg.addColorStop(0,'#24162b');dg.addColorStop(.18,cols[rm.door.lv-1]);dg.addColorStop(.54,cols2[rm.door.lv-1]);dg.addColorStop(.84,cols[rm.door.lv-1]);dg.addColorStop(1,'#261829');
   ctx.fillStyle=dg;ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
@@ -420,11 +493,12 @@ function drawRoom(rm){
  hpBar(r.side?dp.x+dp.w+3:dp.x-9,dp.y,6,dp.h,rm.door.hp/rm.door.max,rm.door.hp/rm.door.max>.4?'#4cd964':'#ff9500');
  // bed
  const bp=bedPos(rm.i);
- ctx.fillStyle='#223a7a';rr(bp.x,bp.y,bp.w,bp.h,6);ctx.fill();
+ ctx.fillStyle='rgba(0,0,0,.42)';rr(bp.x+3,bp.y+bp.h-1,bp.w,bp.h*.22,5);ctx.fill();
+ const bedGrad=ctx.createLinearGradient(bp.x,bp.y,bp.x,bp.y+bp.h);bedGrad.addColorStop(0,'#5874c8');bedGrad.addColorStop(.22,'#223a7a');bedGrad.addColorStop(1,'#111e46');ctx.fillStyle=bedGrad;rr(bp.x,bp.y,bp.w,bp.h,6);ctx.fill();
  ctx.fillStyle='#2f55b0';rr(bp.x+3,bp.y+bp.h*.42,bp.w-6,bp.h*.5,5);ctx.fill();
  ctx.fillStyle='#e8ecff';rr(bp.x+4,bp.y+4,bp.w*.34,bp.h*.3,4);ctx.fill();
  // sleeper head
- ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(bp.x+bp.w*.22,bp.y+bp.h*.55,6,0,6.3);ctx.fill();
+ if(rm.occupied&&!(rm.isPlayer&&state==='settle')){ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(bp.x+bp.w*.22,bp.y+bp.h*.55,6,0,6.3);ctx.fill();}
  ctx.fillStyle='#ffd54a';ctx.font='700 8px system-ui';ctx.textAlign='center';
  ctx.fillText('Lv'+rm.bedLv,bp.cx,bp.y+bp.h+9);
  // turrets
@@ -490,26 +564,37 @@ function drawParts(){
   ctx.fillText(t.s,t.x,t.y);ctx.globalAlpha=1;
  }
 }
-function drawHUD(){
- ctx.fillStyle='#0d0a1e';ctx.fillRect(0,0,W,HUD);
- ctx.fillStyle='#1d1636';ctx.fillRect(0,HUD-3,W,3);
- const rm=player();
- ctx.textBaseline='middle';
- // coins
- ctx.fillStyle='#ffd54a';ctx.font='800 16px system-ui';ctx.textAlign='left';
- ctx.fillText('💰'+Math.floor(rm.alive?rm.coins:0),10,20);
- ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='600 10px system-ui';
- ctx.fillText('+'+income(rm)+'/s (bed Lv'+rm.bedLv+')',10,40);
- // alive count
- ctx.fillStyle='#9dffb0';ctx.font='800 13px system-ui';ctx.textAlign='center';
- ctx.fillText('😴 '+G.aliveCount+'/10 zinda',W/2,20);
- ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='600 10px system-ui';
- ctx.fillText('bhoot Lv'+G.ghost.lv+'  ·  '+Math.ceil(G.lvTimer)+'s me LvUp',W/2,40);
- // ghost hp mini bar
- hpBar(W-96,13,86,9,G.ghost.hp/G.ghost.max,'#b06bff');
- ctx.fillStyle='#e6d6ff';ctx.font='700 9px system-ui';ctx.textAlign='right';
- ctx.fillText('BHOOT',W-10,38);
+function drawRunner(){
+ if(!G||!G.runner||(state!=='move'&&state!=='autoenter'&&state!=='settle'))return;
+ const p=G.runner,x=p.x,y=p.y,walking=(state==='move'&&Math.hypot(stick.x,stick.y)>.08)||state==='autoenter';
+ ctx.save();ctx.fillStyle='rgba(0,0,0,.46)';ctx.beginPath();ctx.ellipse(x+3,y+8,11,4,0,0,Math.PI*2);ctx.fill();
+ const glow=ctx.createRadialGradient(x,y,2,x,y,19);glow.addColorStop(0,'rgba(255,215,110,.45)');glow.addColorStop(1,'rgba(255,215,110,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.fill();
+ ctx.translate(x,y+(walking?Math.sin(p.walk)*1.8:0));const g=ctx.createLinearGradient(-9,-10,9,12);g.addColorStop(0,'#fff1b5');g.addColorStop(.38,'#f5b84b');g.addColorStop(1,'#a65a32');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,1,8,11,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#f1c9a2';ctx.beginPath();ctx.arc(0,-10,6.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#20152a';ctx.beginPath();ctx.arc(-2,-10,1,0,6.3);ctx.arc(2,-10,1,0,6.3);ctx.fill();
+ ctx.fillStyle='#ffe36e';ctx.font='800 9px system-ui';ctx.textAlign='center';ctx.fillText('NIRAV',0,-21);ctx.restore();
 }
+function joystickCenter(){return{x:62,y:H-76}}
+function drawJoystick(){
+ if(state!=='move')return;const c=joystickCenter(),active=movePointer!==null;
+ ctx.save();ctx.globalAlpha=.9;ctx.fillStyle='rgba(10,12,24,.62)';ctx.beginPath();ctx.arc(c.x,c.y,JOY_R+11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(235,224,255,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c.x,c.y,JOY_R,0,Math.PI*2);ctx.stroke();
+ ctx.strokeStyle='rgba(235,224,255,.2)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(c.x-JOY_R+7,c.y);ctx.lineTo(c.x+JOY_R-7,c.y);ctx.moveTo(c.x,c.y-JOY_R+7);ctx.lineTo(c.x,c.y+JOY_R-7);ctx.stroke();
+ const kx=c.x+stick.x*JOY_R,ky=c.y+stick.y*JOY_R;ctx.fillStyle=active?'rgba(255,213,74,.92)':'rgba(214,205,245,.72)';ctx.beginPath();ctx.arc(kx,ky,15,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+ ctx.fillStyle='rgba(255,255,255,.72)';ctx.font='700 9px system-ui';ctx.textAlign='center';ctx.fillText('DRAG TO WALK',c.x,c.y+JOY_R+16);
+}
+function drawHUD(){
+ ctx.fillStyle='#0d0a1e';ctx.fillRect(0,0,W,HUD);ctx.fillStyle='#1d1636';ctx.fillRect(0,HUD-3,W,3);
+ const rm=player(),coins=rm?rm.coins:G.runner.coins;ctx.textBaseline='middle';
+ ctx.fillStyle='#ffd54a';ctx.font='800 16px system-ui';ctx.textAlign='left';ctx.fillText('💰'+Math.floor(coins),10,20);
+ ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='600 10px system-ui';ctx.fillText(rm?'+'+income(rm)+'/s (bed Lv'+rm.bedLv+')':'NIRAV · corridor',10,40);
+ ctx.fillStyle='#9dffb0';ctx.font='800 13px system-ui';ctx.textAlign='center';ctx.fillText('😴 '+G.aliveCount+'/10 zinda',W/2,20);
+ ctx.fillStyle='rgba(255,255,255,.58)';ctx.font='600 10px system-ui';
+ if(state==='move'){ctx.fillText('ROOM DHOONDO · '+Math.ceil(G.phaseTimer)+'s',W/2,40)}
+ else if(state==='settle'){ctx.fillText('ROOM SET HO RAHA HAI...',W/2,40)}
+ else if(state==='autoenter'){ctx.fillText('ROOM MEIN JA RAHA HAI...',W/2,40)}
+ else ctx.fillText('bhoot Lv'+G.ghost.lv+'  ·  '+Math.ceil(G.lvTimer)+'s me LvUp',W/2,40);
+ hpBar(W-96,13,86,9,G.ghost.hp/G.ghost.max,'#b06bff');ctx.fillStyle='#e6d6ff';ctx.font='700 9px system-ui';ctx.textAlign='right';ctx.fillText(state==='play'?'BHOOT':'START',W-10,38);
+}
+
 // ---------- sheet (own room management / other room view) ----------
 let sheetBtns=[];
 function openSheet(rm){
@@ -578,30 +663,6 @@ function sheetTap(x,y){
 function y0OfSheet(){return H-220}
 
 // ---------- title / end ----------
-function drawSelect(){
- ctx.fillStyle='#0c0918';ctx.fillRect(0,0,W,H);
- ctx.fillStyle='#15102a';ctx.fillRect(0,0,W,HUD);
- ctx.fillStyle='#ffe36e';ctx.font='900 18px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('APNA ROOM CHUNO',W/2,19);
- ctx.fillStyle='#bdb1df';ctx.font='600 11px system-ui';ctx.fillText('Jis kamre par tap karoge, wahi tumhara room hoga',W/2,41);
- // ten raised room cards flank a shaded central corridor
- const corridor=ctx.createLinearGradient(corX,0,corX+corW,0);corridor.addColorStop(0,'#120e22');corridor.addColorStop(.5,'#362b55');corridor.addColorStop(1,'#120e22');ctx.fillStyle=corridor;ctx.fillRect(corX,HUD,corW,mapH);
- for(let i=0;i<10;i++){
-  const r=roomRect(i),isSel=i===selectedPly;
-  ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(r.x+3,r.y+6,r.w-4,r.h-6);
-  const g=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g.addColorStop(0,isSel?'#66502a':'#3a3158');g.addColorStop(.45,isSel?'#302543':'#241e38');g.addColorStop(1,'#171326');
-  ctx.fillStyle=g;ctx.fillRect(r.x+2,r.y+2,r.w-4,r.h-7);
-  ctx.strokeStyle=isSel?'#ffd54a':'rgba(198,183,240,.48)';ctx.lineWidth=isSel?2.5:1.4;ctx.strokeRect(r.x+2,r.y+2,r.w-4,r.h-7);
-  ctx.fillStyle=isSel?'#ffd54a':'rgba(255,255,255,.16)';ctx.fillRect(r.x+5,r.y+5,r.w-10,2);
-  const label=i===selectedPly?'NIRAV':(NAMES[i]==='NIRAV'?'CHINTU':NAMES[i]);
-  ctx.fillStyle=isSel?'#ffe36e':'#e8e1ff';ctx.font='800 12px system-ui';ctx.textAlign=r.side?'right':'left';ctx.fillText(label,r.side?r.x+r.w-9:r.x+9,r.y+20);
-  ctx.fillStyle='rgba(225,216,255,.58)';ctx.font='700 9px system-ui';ctx.textAlign='center';ctx.fillText('ROOM '+(i+1),r.x+r.w/2,r.y+36);
-  // bed and tiny doorway hint give the cards a room-like 3D silhouette
-  const dp=doorPos(i),doorX=dp.x,doorY=dp.y;ctx.fillStyle='rgba(0,0,0,.34)';ctx.fillRect(doorX,doorY,dp.w,dp.h);ctx.fillStyle=isSel?'#d59c43':'#806a9e';ctx.fillRect(doorX+3,doorY+3,dp.w-6,dp.h-6);
-  ctx.fillStyle='#354f9c';ctx.fillRect(r.side?r.x+r.w-55:r.x+9,r.y+r.h-48,46,28);ctx.fillStyle='rgba(255,255,255,.55)';ctx.fillRect(r.side?r.x+r.w-52:r.x+12,r.y+r.h-45,13,8);
- }
- ctx.fillStyle='rgba(255,227,110,.9)';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText('TAP ANY ROOM TO START',W/2,H-12);
-}
-
 function drawTitle(){
  ctx.fillStyle='#080711';ctx.fillRect(0,0,W,H);
  // The supplied ghost photo sits behind the title, cropped cleanly and shaded for contrast.
@@ -622,7 +683,7 @@ function drawTitle(){
  bigText('NIRAV',W/2,H*.52,52,'#ffe36e','#ff9d3c');
  bigText('HAUNTED DORM',W/2,H*.52+48,34,'#c9b8ff','#7a5cff');
  ctx.fillStyle='#cfc4ff';ctx.font='600 14px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText('10 log sote hain... bhoot sabke darwaze todega',W/2,H*.68);
+ ctx.fillText('Joystick se chalo, kisi bhi room mein ghuso',W/2,H*.68);
  playBtn=btn('▶  KHELO',W/2-90,H*.74,180,62,'#ff4d6d','#b3123a',24);
  if(best>0){ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='600 12px system-ui';ctx.fillText('best jeet: '+best+'s',W/2,H*.88)}
 }
@@ -645,15 +706,11 @@ function drawEnd(){
 // ---------- input ----------
 function tap(x,y){
  if(state==='title'){
-  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);state='select'}
+  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);newGame()}
   return;
  }
  if(state==='win'||state==='lose'){
-  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);state='select'}
-  return;
- }
- if(state==='select'){
-  for(let i=0;i<10;i++){const r=roomRect(i);if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){selectedPly=i;beep(500,.08,'sine',.05);newGame(i);return}}
+  if(playBtn&&x>=playBtn.x&&x<=playBtn.x+playBtn.w&&y>=playBtn.y&&y<=playBtn.y+playBtn.h){beep(440,.12,'sine',.06);newGame()}
   return;
  }
  if(state!=='play')return;
@@ -663,23 +720,31 @@ function tap(x,y){
   if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){openSheet(rm);beep(500,.06,'sine',.04);return}
  }
 }
-let pDown=null;
-cv.addEventListener('pointerdown',e=>{pDown={x:e.clientX,y:e.clientY}});
-cv.addEventListener('pointerup',e=>{
- if(!pDown)return;
- const dx=e.clientX-pDown.x,dy=e.clientY-pDown.y;
- if(Math.hypot(dx,dy)<14)tap(e.clientX,e.clientY);
- pDown=null;
+function stickSet(x,y){const c=joystickCenter(),dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy),m=Math.min(1,d/JOY_R);stick=d<5?{x:0,y:0}:{x:dx/d*m,y:dy/d*m}}
+cv.addEventListener('pointerdown',e=>{
+ if(state==='move'){
+  const c=joystickCenter();if(Math.hypot(e.clientX-c.x,e.clientY-c.y)<=JOY_R+28){movePointer=e.pointerId;try{cv.setPointerCapture(e.pointerId)}catch(_){}stickSet(e.clientX,e.clientY);e.preventDefault();return}
+ }
+ pDown={x:e.clientX,y:e.clientY};
 });
+cv.addEventListener('pointermove',e=>{if(movePointer===e.pointerId){stickSet(e.clientX,e.clientY);e.preventDefault()}});
+cv.addEventListener('pointerup',e=>{
+ if(movePointer===e.pointerId){movePointer=null;stick={x:0,y:0};e.preventDefault();return}
+ if(!pDown)return;const dx=e.clientX-pDown.x,dy=e.clientY-pDown.y;if(Math.hypot(dx,dy)<14)tap(e.clientX,e.clientY);pDown=null;
+});
+cv.addEventListener('pointercancel',e=>{if(movePointer===e.pointerId){movePointer=null;stick={x:0,y:0}}pDown=null});
+const moveKeys={left:false,right:false,up:false,down:false};
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')moveKeys.left=true;if(k==='arrowright'||k==='d')moveKeys.right=true;if(k==='arrowup'||k==='w')moveKeys.up=true;if(k==='arrowdown'||k==='s')moveKeys.down=true});
+addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')moveKeys.left=false;if(k==='arrowright'||k==='d')moveKeys.right=false;if(k==='arrowup'||k==='w')moveKeys.up=false;if(k==='arrowdown'||k==='s')moveKeys.down=false});
 
 // ---------- main loop ----------
 let last=performance.now();
 function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
- if(state==='play'&&G)update(dt);
+ if((state==='move'||state==='autoenter'||state==='settle'||state==='play')&&G)update(dt);
  ctx.clearRect(0,0,W,H);
  if(state==='title')drawTitle();
- else if(state==='select')drawSelect();
+ else if(state==='move'||state==='autoenter'||state==='settle'){drawMap();drawRunner();drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
  else if(state==='play'){drawMap();drawGhost();drawParts();drawHUD();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
@@ -695,18 +760,17 @@ window.__h={
  get G(){return G},
  get sheet(){return sheet?{name:sheet.rm.name,isPlayer:sheet.rm.isPlayer}:null},
  get PLY(){return PLY},
- get selectedPly(){return selectedPly},
  roomRect,doorPos,bedPos,
  start:newGame,
  tap,
- chooseRoom:(i)=>{selectedPly=i;newGame(i)},
+ move:(x,y)=>{if(!G)return;G.runner.x=x;G.runner.y=y;const i=roomForPoint(x,y);if(i>=0)claimRoom(i,false)},
  ownBed:()=>{const rm=player();return upgBed(rm)},
  ownDoor:()=>{const rm=player();return upgDoor(rm)},
  ownBuild:(k)=>buildTur(player(),k),
  ownUpgTur:(k)=>upgTur(player(),k),
  summary:()=>({state,t:G?G.t:0,ghost:G?{lv:G.ghost.lv,hp:Math.round(G.ghost.hp),mode:G.ghost.mode,target:G.ghost.target,
   enterStage:G.ghost.eStage,exitStage:G.ghost.exitStage,x:Math.round(G.ghost.x),y:Math.round(G.ghost.y)}:null,
-  alive:G?G.aliveCount:0,
+  alive:G?G.aliveCount:0,phase:state,playerRoom:PLY,
   rooms:G?G.rooms.map(r=>({name:r.name,alive:r.alive,player:r.isPlayer,bed:r.bedLv,doorLv:r.door.lv,doorHp:Math.round(r.door.hp),tur:r.turrets.map(t=>t?t.lv:0)})):[]})
 };
 </script></body></html>
