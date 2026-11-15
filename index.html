@@ -404,9 +404,9 @@ function update(dt){
    if(Math.hypot(gh.x-tp.x,gh.y-tp.y)<R&&t.cd<=0){
     t.cd=.5;t.kick=.1;
     if(rm.isPlayer){
-     const dx=gh.x-tp.x,dy=gh.y-tp.y,flight=.34;
-     parts.push({x:tp.x,y:tp.y,tx:gh.x,ty:gh.y,vx:dx/flight,vy:dy/flight,life:flight,maxLife:flight,c:'#ffe88a',bullet:true,damage:TURLV[t.lv-1].dmg*.5,target:gh.target});
-     parts.push({x:tp.x,y:tp.y,vx:0,vy:0,life:.11,c:'#fff0b2',muzzle:true});
+     const from=turretMuzzle(rm,k),to=ghostScreenPoint(gh),dx=to.x-from.x,dy=to.y-from.y,flight=.8;
+     parts.push({x:from.x,y:from.y,tx:to.x,ty:to.y,vx:dx/flight,vy:dy/flight,life:flight,maxLife:flight,c:'#ffe88a',bullet:true,damage:TURLV[t.lv-1].dmg*.5,target:gh.target});
+     parts.push({x:from.x,y:from.y,vx:0,vy:0,life:.11,c:'#fff0b2',muzzle:true});
      beep(620,.055,'square',.028,.55);
     }else hurtGhost(TURLV[t.lv-1].dmg*.5);
    }
@@ -484,6 +484,22 @@ function cylinder(out,x,y,z,r,h,col,steps=8){for(let i=0;i<steps;i++){const a=2*
 function mesh(data,dynamic=false){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);return{b,n:data.length/VSTRIDE}}
 function floorTexture(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#b9b2a6';x.fillRect(0,0,128,128);for(let y=0;y<4;y++)for(let i=0;i<4;i++){const ox=(i%2)*16;const xx=i*32+(y%2?16:0);x.fillStyle=['#a9a49a','#c4bdb0','#b2ab9e','#bbb5a9'][(i+y)%4];x.fillRect(xx+1,y*32+1,30,30);x.strokeStyle='rgba(35,29,26,.34)';x.lineWidth=2;x.strokeRect(xx+1,y*32+1,30,30);for(let k=0;k<12;k++){x.fillStyle='rgba(45,37,32,'+(Math.random()*.12)+')';x.fillRect(xx+Math.random()*29,y*32+Math.random()*29,1+Math.random()*3,1+Math.random()*2)}}return c}
 function mapWorldX(px){return px/W*18-9}function mapWorldZ(py){return(py-HUD)/mapH*20-10}
+function projectScenePoint(x,y,z){
+ const w=Math.max(1,Math.round(innerWidth*Math.min(devicePixelRatio||1,.62))),h=Math.max(1,Math.round(innerHeight*Math.min(devicePixelRatio||1,.62)));
+ const eye=[0,22,22],target=[0,0,0],model=matScale(.52,1,1.25);
+ const mvp=mult4(matPerspective(40*Math.PI/180,w/h,.1,100),mult4(matLook(eye,target),model));
+ const cx=mvp[0]*x+mvp[4]*y+mvp[8]*z+mvp[12],cy=mvp[1]*x+mvp[5]*y+mvp[9]*z+mvp[13],cw=mvp[3]*x+mvp[7]*y+mvp[11]*z+mvp[15];
+ if(cw<=0)return{x:W/2,y:H/2};
+ return{x:(cx/cw*.5+.5)*W,y:(1-(cy/cw*.5+.5))*H};
+}
+function turretMuzzle(rm,k){
+ const tp=turretPos(rm.i,k),side=rm.i>=5?1:-1;
+ if(!glReady)return{x:tp.x+(side>0?-10:10),y:tp.y};
+ const tx=mapWorldX(tp.x),tz=mapWorldZ(tp.y);
+ // Match the tip of the barrel mesh in buildDynamic, not a guessed room/door coordinate.
+ return projectScenePoint(tx+(side<0?.57:-.57),.53,tz);
+}
+function ghostScreenPoint(gh){return glReady?projectScenePoint(mapWorldX(gh.x),.88,mapWorldZ(gh.y)):{x:gh.x,y:gh.y}}
 function init3D(){try{gl=worldCanvas.getContext('webgl',{alpha:false,antialias:false,depth:true,stencil:false,powerPreference:'low-power'});if(!gl)return;glProgram=prog();const floor=floorTexture();glTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,glTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,floor);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);glReady=true;renderStats.webgl=true;buildWorld()}catch(e){console.warn('3D scene unavailable, using canvas fallback',e);glReady=false}}
 function buildWorld(){const a=[];plane(a,-9,-10,9,10,0,[.56,.52,.45]);
  // Actual raised rooms and an inset long corridor, all open-roof for a clear mobile diorama view.
@@ -665,7 +681,7 @@ function drawRoom(rm){
   ctx.fillStyle='#4ad8ff';ctx.beginPath();ctx.arc(tp.x,tp.y,5.5,0,6.3);ctx.fill();
   // barrel toward corridor
   ctx.strokeStyle='#9aeaff';ctx.lineWidth=2.4;
-  ctx.beginPath();ctx.moveTo(tp.x,tp.y);ctx.lineTo(tp.x+(r.side?12:-12),tp.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tp.x,tp.y);ctx.lineTo(tp.x+(r.side?-12:12),tp.y);ctx.stroke();
   ctx.fillStyle='#ffd54a';ctx.font='700 8px system-ui';ctx.textAlign='center';
   ctx.fillText(t.lv,tp.x,tp.y+17);
  }
@@ -726,11 +742,10 @@ function drawParts(){
   const alpha=Math.max(0,Math.min(1,p.bullet?p.life/p.maxLife:(p.impact||p.spark)?p.life/p.maxLife:p.muzzle?p.life*9:p.life*2.4));
   ctx.globalAlpha=alpha;
   if(p.bullet){
-   const pulse=1+.18*Math.sin((1-p.life/p.maxLife)*18);
-   ctx.shadowColor='#fff0a3';ctx.shadowBlur=9;
-   ctx.fillStyle='#fff9d5';ctx.beginPath();ctx.arc(p.x,p.y,4.2*pulse,0,Math.PI*2);ctx.fill();
-   ctx.shadowBlur=0;ctx.fillStyle='#ffc84c';ctx.beginPath();ctx.arc(p.x,p.y,2.5*pulse,0,Math.PI*2);ctx.fill();
-   ctx.strokeStyle='rgba(255,247,196,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,6*pulse,0,Math.PI*2);ctx.stroke();
+   const pulse=1+.10*Math.sin((1-p.life/p.maxLife)*18);
+   ctx.shadowColor='#ffcf62';ctx.shadowBlur=9;
+   ctx.fillStyle='#ffd66e';ctx.beginPath();ctx.arc(p.x,p.y,5*pulse,0,Math.PI*2);ctx.fill();
+   ctx.shadowBlur=2;ctx.fillStyle='#fff8d8';ctx.beginPath();ctx.arc(p.x,p.y,2.4*pulse,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
   }else if(p.impact){
    const q=1-p.life/p.maxLife,r=5+q*26;ctx.shadowColor='#ffe47a';ctx.shadowBlur=8*(1-q)+2;ctx.strokeStyle='#fff0a3';ctx.lineWidth=3.2*(1-q)+.7;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
    ctx.strokeStyle='rgba(213,250,255,'+(1-q)*.85+')';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,r*.52,0,Math.PI*2);ctx.stroke();
@@ -959,7 +974,7 @@ window.__h={
  get G(){return G},
  get sheet(){return sheet?{name:sheet.rm.name,isPlayer:sheet.rm.isPlayer}:null},
  get PLY(){return PLY},
- roomRect,doorPos,bedPos,
+ roomRect,doorPos,bedPos,turretPos,turretMuzzle,ghostScreenPoint,
  start:newGame,
  tap,
  move:(x,y)=>{if(!G)return;G.runner.x=x;G.runner.y=y;const i=roomForPoint(x,y);if(i>=0)claimRoom(i,false)},
