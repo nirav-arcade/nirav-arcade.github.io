@@ -34,8 +34,9 @@ function roomRect(i){
 }
 function doorPos(rm){
  const r=roomRect(rm);
- const x=r.side?r.x+2:r.x+r.w-16;
- return{x:x,y:r.y+r.h/2-23,w:14,h:46,cx:x+7,cy:r.y+r.h/2};
+ // The opening sits directly on the corridor/room boundary and is wide enough for the ghost to pass.
+ const x=r.side?corX+corW:corX-22;
+ return{x:x,y:r.y+r.h/2-23,w:22,h:46,cx:x+11,cy:r.y+r.h/2};
 }
 function bedPos(rm){
  const r=roomRect(rm);
@@ -143,10 +144,25 @@ function aiTick(rm,dt){
 }
 
 // ---------- ghost ----------
+// Every route between corridor and room passes through the broken doorway.
+function corridorDoorPoint(rm){
+ const dp=doorPos(rm.i);
+ return{x:rm.i>=5?corX+corW-18:corX+18,y:dp.cy};
+}
+function insideDoorPoint(rm){
+ const dp=doorPos(rm.i),dir=rm.i>=5?1:-1;
+ return{x:dp.cx+dir*(dp.w/2+14),y:dp.cy};
+}
+function moveGhostTo(x,y,speed,dt){
+ const gh=G.ghost,dx=x-gh.x,dy=y-gh.y,d=Math.hypot(dx,dy);
+ const step=speed*dt;
+ if(d<=step+1){gh.x=x;gh.y=y;return true}
+ gh.x+=dx/d*step;gh.y+=dy/d*step;return false;
+}
 function setAtk(rm){
- const gh=G.ghost,dp=doorPos(rm.i);
+ const gh=G.ghost,cp=corridorDoorPoint(rm);
  gh.target=rm.i;gh.lastTarget=rm.i;
- gh.ax=dp.cx+(rm.i>=5?-18:18);gh.ay=dp.cy; // corridor side of the door - never inside the room
+ gh.ax=cp.x;gh.ay=cp.y; // approach and attack from inside the corridor
  gh.mode='travel';
  if(rm.isPlayer){G.lastPlyAtk=G.t;say('BHOOT TUMHARE ROOM KI TARAF!','#ff5d78');beep(140,.5,'sawtooth',.08,.5)}
 }
@@ -196,8 +212,10 @@ function updateGhost(dt){
    const rm=G.rooms[gh.target];
    if(!rm||!rm.alive){gh.mode='roam';gh.rt=1;break}
    if(rm.door.hp<=0){
-    gh.mode='enter';gh.eT=0;
-    const dp=doorPos(rm.i),bp=bedPos(rm.i);gh.ex=bp.cx;gh.ey=bp.cy;
+    gh.mode='enter';gh.eStage=0;
+    const dp=doorPos(rm.i),ip=insideDoorPoint(rm);
+    const bp=bedPos(rm.i);
+    gh.enterRoute=[{x:dp.cx,y:dp.cy},ip,{x:bp.cx,y:bp.cy}];
     say(rm.isPlayer?'TUMHARA DOOR TUT GAYA!':rm.name+' KA DOOR TUT GAYA!','#ff3b30');
     beep(60,.6,'sawtooth',.09,.3);G.shake=Math.max(G.shake,9);
     break}
@@ -215,11 +233,20 @@ function updateGhost(dt){
    if(gh.holdT>22){say(rm.isPlayer?'Bhoot haar ke chala gaya... abhi wapas aayega!':'Bhoot doosre room ki taraf gaya','#9ad7ff');gh.mode='roam';gh.rt=.8;gh.ty=gh.y+rnd(-60,60)}
    break}
   case 'enter':{
-   gh.eT+=dt;
-   const dx=gh.ex-gh.x,dy=gh.ey-gh.y,d=Math.hypot(dx,dy)||1;
-   const sp=70;
-   gh.x+=dx/d*sp*dt;gh.y+=dy/d*sp*dt;
-   if(d<10||gh.eT>3){eliminate(gh.target)}
+   const p=gh.enterRoute&&gh.enterRoute[gh.eStage];
+   if(!p){eliminate(gh.target);break}
+   if(moveGhostTo(p.x,p.y,gh.eStage<2?70:78,dt)){
+    gh.eStage++;
+    if(gh.eStage>=gh.enterRoute.length)eliminate(gh.target);
+   }
+   break}
+  case 'exit':{
+   const p=gh.exitRoute&&gh.exitRoute[gh.exitStage];
+   if(!p){finishGhostExit();break}
+   if(moveGhostTo(p.x,p.y,78,dt)){
+    gh.exitStage++;
+    if(gh.exitStage>=gh.exitRoute.length)finishGhostExit();
+   }
    break}
   case 'flee':{
    gh.y-=gl.spd*2*dt;
@@ -235,15 +262,22 @@ function updateGhost(dt){
 function eliminate(idx){
  const rm=G.rooms[idx];if(!rm||!rm.alive)return;
  rm.alive=false;rm.gone=G.t;G.aliveCount--;
- const gh=G.ghost;
+ const gh=G.ghost,dp=doorPos(idx),ip=insideDoorPoint(rm),cp=corridorDoorPoint(rm);
  gh.hp=Math.min(gh.max,gh.hp+gh.max*.35);
+ gh.exitPlayer=rm.isPlayer;
+ gh.exitStage=0;
+ gh.exitRoute=[ip,{x:dp.cx,y:dp.cy},cp];
+ gh.mode='exit';gh.target=idx;
  const r=roomRect(idx);
  for(let i=0;i<14;i++)parts.push({x:r.x+r.w/2,y:r.y+r.h/2,vx:rnd(-90,90),vy:rnd(-120,20),life:rnd(.4,.9),c:'#b08cff',s:ri(2,4)});
  beep(48,.9,'sawtooth',.09,.35);G.shake=12;
- if(rm.isPlayer){finish(false);return}
- say(rm.name+' PAKDA GAYA!  '+G.aliveCount+' bache','#ff8fa0');
- gh.x=r.side?r.x+r.w+14:r.x-14;gh.y=r.y+r.h/2;
+ say(rm.isPlayer?'TUMHE PAKAD LIYA!':rm.name+' PAKDA GAYA!  '+G.aliveCount+' bache','#ff8fa0');
+}
+function finishGhostExit(){
+ const gh=G.ghost,wasPlayer=gh.exitPlayer;
  gh.mode='roam';gh.rt=1.1;gh.ty=HUD+rnd(mapH*.1,mapH*.9);gh.target=-1;
+ gh.exitRoute=null;gh.enterRoute=null;gh.exitPlayer=false;
+ if(wasPlayer)finish(false);
 }
 function lvlUp(){
  const gh=G.ghost;gh.lv=Math.min(14,gh.lv+1);
@@ -350,6 +384,9 @@ function drawRoom(rm){
   ctx.fillText('z z',nx+2,r.y+27+zo);
  }
  if(dead){
+  const dp=doorPos(rm.i);
+  ctx.fillStyle='#1a1024';ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
+  ctx.strokeStyle='rgba(201,162,74,.75)';ctx.lineWidth=2;ctx.strokeRect(dp.x,dp.y,dp.w,dp.h);
   ctx.font='26px system-ui';ctx.textAlign='center';
   ctx.fillText('💀',r.x+r.w/2,r.y+r.h/2+8);
   ctx.font='700 9px system-ui';ctx.fillStyle='rgba(255,110,110,.8)';
@@ -401,9 +438,11 @@ function drawRoom(rm){
 }
 function drawGhost(){
  const gh=G.ghost;ctx.save();
+ const passDoor=(gh.mode==='enter'&&gh.eStage<2)||(gh.mode==='exit'&&gh.exitStage>=1);
  const bob=Math.sin(gh.ph)*4;
  ctx.translate(gh.x+((G.shake>1)?rnd(-G.shake,G.shake)*.4:0),gh.y+bob);
  const gr=17;
+ if(passDoor)ctx.scale(.64,.64);
  const gg=ctx.createRadialGradient(0,-4,2,0,0,gr+10);
  gg.addColorStop(0,gh.fl>0?'#ffffff':'#b08cff');gg.addColorStop(1,'rgba(80,40,160,.15)');
  ctx.fillStyle=gg;
@@ -620,8 +659,9 @@ window.__h={
  ownDoor:()=>{const rm=player();return upgDoor(rm)},
  ownBuild:(k)=>buildTur(player(),k),
  ownUpgTur:(k)=>upgTur(player(),k),
- summary:()=>({state,t:G?G.t:0,ghost:G?{lv:G.ghost.lv,hp:Math.round(G.ghost.hp),mode:G.ghost.mode,target:G.ghost.target}:null,
+ summary:()=>({state,t:G?G.t:0,ghost:G?{lv:G.ghost.lv,hp:Math.round(G.ghost.hp),mode:G.ghost.mode,target:G.ghost.target,
+  enterStage:G.ghost.eStage,exitStage:G.ghost.exitStage,x:Math.round(G.ghost.x),y:Math.round(G.ghost.y)}:null,
   alive:G?G.aliveCount:0,
-  rooms:G?G.rooms.map(r=>({name:r.name,alive:r.alive,bed:r.bedLv,doorLv:r.door.lv,doorHp:Math.round(r.door.hp),tur:r.turrets.map(t=>t?t.lv:0)})):[]})
+  rooms:G?G.rooms.map(r=>({name:r.name,alive:r.alive,player:r.isPlayer,bed:r.bedLv,doorLv:r.door.lv,doorHp:Math.round(r.door.hp),tur:r.turrets.map(t=>t?t.lv:0)})):[]})
 };
 </script></body></html>
