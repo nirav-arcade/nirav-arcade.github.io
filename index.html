@@ -56,7 +56,7 @@ const BEDINC=[2,4,7,11,16,24],BEDCOST=[40,90,180,360,640];
 const DOORHP=[200,420,800,1500,2600],DOORCOST=[40,90,180,360];
 const TURLV=[{dmg:6,cost:30},{dmg:13,cost:60},{dmg:26,cost:120},{dmg:50,cost:220},{dmg:90}];
 const NAMES=['NIRAV','RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
-const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(1400*Math.pow(1.5,i-1)),dmg:+(9*Math.pow(1.42,i-1)).toFixed(1),spd:30+3*i});
+const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(2600*Math.pow(1.5,i-1)),dmg:+(11*Math.pow(1.34,i-1)).toFixed(1),spd:30+3*i});
 
 // ---------- state ----------
 let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true;
@@ -77,9 +77,9 @@ function newGame(){
  rooms[PLY].isPlayer=true;rooms[PLY].coins=120;rooms[PLY].name='NIRAV';
  // make sure a room named NIRAV is not duplicated: rename if PLY was not 0
  for(let i=0;i<10;i++){if(i!==PLY&&rooms[i].name==='NIRAV')rooms[i].name='CHINTU'}
- G={t:0,rooms,
-  ghost:{lv:1,hp:GLV[1].hp,max:GLV[1].hp,x:W/2,y:-40,mode:'spawn',target:-1,ph:0,att:0,fl:0,regenCd:0,ax:W/2,ay:HUD+30},
-  lvTimer:40,shake:0,aliveCount:10,dmgDone:0,thud:0};
+ G={t:0,rooms,lastPlyAtk:-99,
+  ghost:{lv:1,hp:GLV[1].hp,max:GLV[1].hp,x:W/2,y:-40,mode:'spawn',target:-1,lastTarget:-1,ph:0,att:0,fl:0,regenCd:0,ax:W/2,ay:HUD+30},
+  lvTimer:50,shake:0,aliveCount:10,dmgDone:0,thud:0};
  parts=[];texts=[];sheet=null;
  say('Bhoot aa raha hai... apna room taiyaar karo!','#9ad7ff');
  state='play';
@@ -143,21 +143,29 @@ function aiTick(rm,dt){
 }
 
 // ---------- ghost ----------
+function setAtk(rm){
+ const gh=G.ghost,dp=doorPos(rm.i);
+ gh.target=rm.i;gh.lastTarget=rm.i;
+ gh.ax=dp.cx+(rm.i>=5?-18:18);gh.ay=dp.cy; // corridor side of the door - never inside the room
+ gh.mode='travel';
+ if(rm.isPlayer){G.lastPlyAtk=G.t;say('BHOOT TUMHARE ROOM KI TARAF!','#ff5d78');beep(140,.5,'sawtooth',.08,.5)}
+}
 function pickTarget(){
  const gh=G.ghost,alive=aliveRooms();if(!alive.length)return;
+ const pm=player();
+ // the ghost comes for YOU regularly - first target is always the player, then at least every ~30s
+ if(pm.alive&&G.t-G.lastPlyAtk>40){setAtk(pm);return}
  let bestRm=null,bestSc=1e9;
  for(const rm of alive){
+  if(rm.isPlayer&&gh.lastTarget===PLY)continue; // just hit you - give you a breather, hit someone else
   let sc=rm.door.hp+rnd(0,140);
   const tdps=rm.turrets.filter(Boolean).reduce((s,t)=>s+turDmg(t),0);
   sc+=tdps*22;
-  if(rm.isPlayer&&G.t<45)sc+=260; // ghost mostly leaves you alone at the start
+  if(rm.isPlayer)sc-=70;
   if(sc<bestSc){bestSc=sc;bestRm=rm}
  }
- gh.target=bestRm.i;
- const dp=doorPos(bestRm.i);
- gh.ax=dp.cx+(bestRm.i>=5?26:-26);gh.ay=dp.cy;
- gh.mode='travel';
- if(bestRm.isPlayer){say('BHOOT TUMHARE ROOM KI TARAF!','#ff5d78');beep(140,.5,'sawtooth',.08,.5)}
+ if(!bestRm)bestRm=pm.alive?pm:alive[0];
+ setAtk(bestRm);
 }
 function hurtGhost(d,silent){
  const gh=G.ghost;if(state!=='play')return;
@@ -167,21 +175,21 @@ function hurtGhost(d,silent){
 function updateGhost(dt){
  const gh=G.ghost,gl=GLV[gh.lv];
  gh.ph+=dt*4;if(gh.fl>0)gh.fl-=dt;
- G.lvTimer-=dt;if(G.lvTimer<=0){G.lvTimer=40;lvlUp()}
+ G.lvTimer-=dt;if(G.lvTimer<=0){G.lvTimer=50;lvlUp()}
  switch(gh.mode){
   case 'spawn':{
    gh.y+=(HUD+mapH*.5-gh.y)*Math.min(1,dt*.9);
-   if(gh.y>HUD+mapH*.4){gh.mode='roam';gh.rt=5;gh.ty=HUD+rnd(mapH*.2,mapH*.8)}
+   if(gh.y>HUD+mapH*.4){gh.mode='roam';gh.rt=3.5;gh.ty=HUD+rnd(mapH*.2,mapH*.8)}
    break}
   case 'roam':{
    gh.rt-=dt;
    gh.y+=Math.sign(gh.ty-gh.y)*gl.spd*dt;
    if(Math.abs(gh.ty-gh.y)<8){gh.ty=HUD+rnd(mapH*.08,mapH*.92)}
-   if(gh.rt<=0)pickTarget();
+   if(gh.rt<=0){gh.x+=(W/2-gh.x)*Math.min(1,dt*6);pickTarget()}
    break}
   case 'travel':{
    const dx=gh.ax-gh.x,dy=gh.ay-gh.y,d=Math.hypot(dx,dy);
-   if(d<6){gh.mode='attack';gh.att=0;break}
+   if(d<6){gh.mode='attack';gh.att=0;gh.holdT=0;if(gh.target===PLY)G.lastPlyAtk=G.t;break}
    gh.x+=dx/d*gl.spd*1.4*dt;gh.y+=dy/d*gl.spd*1.4*dt;
    break}
   case 'attack':{
@@ -201,7 +209,10 @@ function updateGhost(dt){
    const dp=doorPos(rm.i);
    if(gh.att>.5){gh.att=0;beep(90,.09,'square',.045);
     parts.push({x:dp.cx+rnd(-10,10),y:dp.cy+rnd(-16,16),vx:rnd(-30,30),vy:rnd(-60,-10),life:.5,c:'#c9a24a',s:3})}
-   if(gh.hp<gh.max*.25&&gh.regenCd<=0){gh.mode='flee';gh.fy=HUD+20;say('Bhoot bhaag raha hai!','#9dffb0')}
+   if(gh.hp<gh.max*.20&&gh.regenCd<=0){gh.mode='flee';gh.fy=HUD+20;say('Bhoot bhaag raha hai!','#9dffb0')}
+   // gives up on a door that holds too long - moves to the next room like the real game
+   gh.holdT+=dt;
+   if(gh.holdT>22){say(rm.isPlayer?'Bhoot haar ke chala gaya... abhi wapas aayega!':'Bhoot doosre room ki taraf gaya','#9ad7ff');gh.mode='roam';gh.rt=.8;gh.ty=gh.y+rnd(-60,60)}
    break}
   case 'enter':{
    gh.eT+=dt;
@@ -216,7 +227,7 @@ function updateGhost(dt){
    break}
   case 'regen':{
    gh.hp=Math.min(gh.max*.55,gh.hp+gh.max*.05*dt);gh.rt+=dt;
-   if(gh.rt>4||gh.hp>=gh.max*.55){gh.regenCd=28;pickTarget()}
+   if(gh.rt>3||gh.hp>=gh.max*.55){gh.regenCd=24;say('Bhoot wapas aa gaya!','#ff8fa0');pickTarget()}
    break}
  }
  if(gh.regenCd>0)gh.regenCd-=dt;
@@ -231,12 +242,12 @@ function eliminate(idx){
  beep(48,.9,'sawtooth',.09,.35);G.shake=12;
  if(rm.isPlayer){finish(false);return}
  say(rm.name+' PAKDA GAYA!  '+G.aliveCount+' bache','#ff8fa0');
- gh.x=r.side?r.x+r.w+20:r.x-20;gh.y=r.y+r.h/2;
- gh.mode='roam';gh.rt=rnd(2,4.5);gh.ty=HUD+rnd(mapH*.1,mapH*.9);gh.target=-1;
+ gh.x=r.side?r.x+r.w+14:r.x-14;gh.y=r.y+r.h/2;
+ gh.mode='roam';gh.rt=1.1;gh.ty=HUD+rnd(mapH*.1,mapH*.9);gh.target=-1;
 }
 function lvlUp(){
  const gh=G.ghost;gh.lv=Math.min(14,gh.lv+1);
- gh.max=GLV[gh.lv].hp;gh.hp=gh.max;
+ gh.max=GLV[gh.lv].hp;gh.hp=Math.min(gh.max,gh.hp+gh.max*.6);
  say('BHOOT LEVEL UP!  Lv'+gh.lv,'#ff5d78');beep(70,.7,'sawtooth',.08,.4);G.shake=Math.max(G.shake,6);
 }
 
@@ -247,13 +258,16 @@ function update(dt){
   if(!rm.alive)continue;
   if(rm.isPlayer)rm.coins+=income(rm)*dt;
   else aiTick(rm,dt);
+  // door slowly repairs itself while the ghost is not pounding it
+  const underAttack=G.ghost.target===rm.i&&G.ghost.mode==='attack';
+  if(!underAttack&&rm.door.hp>0&&rm.door.hp<rm.door.max)rm.door.hp=Math.min(rm.door.max,rm.door.hp+8*dt);
   // turrets fire
   for(let k=0;k<3;k++){
    const t=rm.turrets[k];if(!t)continue;
    t.cd-=dt;if(t.kick>0)t.kick-=dt;
    const gh=G.ghost;if(gh.mode==='spawn')continue;
    const tp=turretPos(rm.i,k);
-   const R=rowH*1.35;
+   const R=rowH*1.6;
    if(Math.hypot(gh.x-tp.x,gh.y-tp.y)<R&&t.cd<=0){
     t.cd=.5;t.kick=.1;
     hurtGhost(TURLV[t.lv-1].dmg*.5);
