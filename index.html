@@ -56,7 +56,7 @@ function turretPos(rm,k){
 // ---------- data ----------
 const BEDINC=[2,4,7,11,16,24],BEDCOST=[40,90,180,360,640];
 const DOORHP=[200,420,800,1500,2600],DOORCOST=[40,90,180,360];
-const TURLV=[{dmg:6,cost:30},{dmg:13,cost:60},{dmg:26,cost:120},{dmg:50,cost:220},{dmg:90}];
+const TURLV=[{dmg:100,cost:30},{dmg:150,cost:60},{dmg:225,cost:120},{dmg:340,cost:220},{dmg:510}];
 const NAMES=['NIRAV','RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
 const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(2600*Math.pow(1.5,i-1)),dmg:+(11*Math.pow(1.34,i-1)).toFixed(1),spd:30+3*i});
 
@@ -734,21 +734,22 @@ function drawHUD(){
  hpBar(W-96,13,86,9,G.ghost.hp/G.ghost.max,'#b06bff');ctx.fillStyle='#e6d6ff';ctx.font='700 9px system-ui';ctx.textAlign='right';ctx.fillText(state==='play'?'BHOOT':'START',W-10,38);
 }
 
-// ---------- sheet (own room management / other room view) ----------
+// ---------- shop (own-room upgrades / other-room inspection) ----------
 let sheetBtns=[];
-function openSheet(rm){
- sheet={rm};
+function openSheet(rm){sheet={rm}}
+function shopButtonRect(){return{x:W-86,y:H-52,w:76,h:40}}
+function drawShopButton(){
+ if(state!=='play'||PLY<0||sheet)return;
+ const b=shopButtonRect();btn('🛒 SHOP',b.x,b.y,b.w,b.h,'#be48ef','#6729a6',12);
 }
 function drawSheet(){
  if(!sheet)return;
- const rm=sheet.rm,r=roomRect(rm.i);
- const shH=rm.isPlayer?212:150;
- const y0=H-shH;
- ctx.fillStyle='rgba(10,8,24,.94)';ctx.fillRect(0,y0,W,shH);
- ctx.strokeStyle='rgba(255,213,74,.5)';ctx.lineWidth=1.5;
+ const rm=sheet.rm,shH=rm.isPlayer?244:150,y0=H-shH;
+ ctx.fillStyle='rgba(10,8,24,.96)';ctx.fillRect(0,y0,W,shH);
+ ctx.strokeStyle='rgba(255,213,74,.58)';ctx.lineWidth=1.5;
  ctx.beginPath();ctx.moveTo(0,y0);ctx.lineTo(W,y0);ctx.stroke();
  ctx.fillStyle=rm.isPlayer?'#ffd54a':'#cfc4ff';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText((rm.isPlayer?'TUMHARA ROOM':'ROOM: '+rm.name)+(rm.alive?'':'  (pakda gaya)'),W/2,y0+20);
+ ctx.fillText((rm.isPlayer?'SHOP · NIRAV ROOM':'ROOM: '+rm.name)+(rm.alive?'':'  (pakda gaya)'),W/2,y0+20);
  sheetBtns=[];
  if(!rm.alive){sheetBtns.push(btn('BAND KARO',W/2-70,y0+shH-52,140,38,'#3a3a55','#262640'));return}
  if(!rm.isPlayer){
@@ -761,24 +762,24 @@ function drawSheet(){
   sheetBtns.push(btn('BAND KARO',W/2-70,y0+shH-52,140,38,'#3a3a55','#262640'));
   return;
  }
+ ctx.fillStyle='rgba(255,255,255,.82)';ctx.font='600 10px system-ui';
+ ctx.fillText('Sote hue +'+income(rm)+' coins/s  ·  Door '+Math.ceil(rm.door.hp)+'/'+rm.door.max+' HP',W/2,y0+41);
  const bw=(W-32-24)/2,bh=44;
  const bc=BEDCOST[rm.bedLv-1],dc=DOORCOST[rm.door.lv-1];
- sheetBtns.push(btn('BED Lv'+(rm.bedLv+1),16,y0+40,bw,bh,'#2f6bd8','#1d3f8a',15,bc!==undefined?('💰'+bc+'  → +'+BEDINC[rm.bedLv]+'/s'):'MAX',bc===undefined||rm.coins<bc));
+ sheetBtns.push(btn('BED Lv'+(rm.bedLv+1),16,y0+56,bw,bh,'#2f6bd8','#1d3f8a',15,bc!==undefined?('💰'+bc+' · +'+BEDINC[rm.bedLv]+'/s'):'MAX',bc===undefined||rm.coins<bc));
  sheetBtns[sheetBtns.length-1].act='bed';
- sheetBtns.push(btn('DOOR Lv'+(rm.door.lv+1),16+bw+24,y0+40,bw,bh,'#8a5a2f','#5a3a1d',15,dc!==undefined?('💰'+dc+'  → '+DOORHP[rm.door.lv]+' HP'):'MAX',dc===undefined||rm.coins<dc));
+ sheetBtns.push(btn('DOOR Lv'+(rm.door.lv+1),16+bw+24,y0+56,bw,bh,'#8a5a2f','#5a3a1d',15,dc!==undefined?('💰'+dc+' · '+DOORHP[rm.door.lv]+' HP'):'MAX',dc===undefined||rm.coins<dc));
  sheetBtns[sheetBtns.length-1].act='door';
- // turrets
  const tw=(W-32-24)/3;
  for(let k=0;k<3;k++){
-  const t=rm.turrets[k];
-  let label,sub,dim,cost;
-  if(!t){label='🔫 BANAO';sub='💰'+TURLV[0].cost;cost=TURLV[0].cost}
-  else if(t.lv<TURLV.length&&TURLV[t.lv].cost!==undefined){label='🔫 Lv'+(t.lv+1);sub='💰'+TURLV[t.lv].cost;cost=TURLV[t.lv].cost}
-  else{label='🔫 MAX';sub='';cost=1e9}
-  sheetBtns.push(btn(label,16+k*(tw+12),y0+96,tw,44,'#1d7a8a','#0f4a55',14,sub,rm.coins<cost));
+  const t=rm.turrets[k],next=t?TURLV[t.lv]:TURLV[0];
+  const cost=next&&next.cost!==undefined?next.cost:1e9;
+  const label=t?(next&&next.cost!==undefined?'🔫 SLOT '+(k+1)+' Lv'+(t.lv+1):'🔫 SLOT '+(k+1)+' MAX'):'🔫 BUILD '+(k+1);
+  const sub=next&&next.cost!==undefined?('💰'+cost+' · '+next.dmg+' DPS'):(t?('Lv'+t.lv+' · '+TURLV[t.lv-1].dmg+' DPS'):'💰'+cost+' · '+TURLV[0].dmg+' DPS');
+  sheetBtns.push(btn(label,16+k*(tw+12),y0+110,tw,46,'#1d7a8a','#0f4a55',11,sub,rm.coins<cost));
   sheetBtns[sheetBtns.length-1].act='tur'+k;
  }
- sheetBtns.push(btn('BAND KARO',W/2-70,y0+shH-50,140,36,'#3a3a55','#262640'));
+ sheetBtns.push(btn('BAND KARO',W/2-70,y0+190,140,36,'#3a3a55','#262640'));
  sheetBtns[sheetBtns.length-1].act='close';
 }
 function sheetTap(x,y){
@@ -799,7 +800,7 @@ function sheetTap(x,y){
  }
  return false;
 }
-function y0OfSheet(){return H-220}
+function y0OfSheet(){return H-244}
 
 // ---------- title / end ----------
 function drawTitle(){
@@ -854,6 +855,7 @@ function tap(x,y){
  }
  if(state!=='play')return;
  if(sheet){if(sheetTap(x,y))return;sheet=null;return}
+ if(PLY>=0){const b=shopButtonRect();if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h){openSheet(player());beep(500,.06,'sine',.04);return}}
  for(const rm of G.rooms){
   const r=roomRect(rm.i);
   if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){openSheet(rm);beep(500,.06,'sine',.04);return}
@@ -885,7 +887,7 @@ function frame(now){
  if(glReady&&G&&(state==='move'||state==='autoenter'||state==='settle'||state==='play'||state==='win'||state==='lose'))render3DWorld();
  if(state==='title')drawTitle();
  else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){drawMap();drawAIRunners();drawRunner()}drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
- else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawSheet();
+ else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawShopButton();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
  else drawEnd();
