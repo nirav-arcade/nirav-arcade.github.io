@@ -485,9 +485,9 @@ function mesh(data,dynamic=false){const b=gl.createBuffer();gl.bindBuffer(gl.ARR
 function floorTexture(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#b9b2a6';x.fillRect(0,0,128,128);for(let y=0;y<4;y++)for(let i=0;i<4;i++){const ox=(i%2)*16;const xx=i*32+(y%2?16:0);x.fillStyle=['#a9a49a','#c4bdb0','#b2ab9e','#bbb5a9'][(i+y)%4];x.fillRect(xx+1,y*32+1,30,30);x.strokeStyle='rgba(35,29,26,.34)';x.lineWidth=2;x.strokeRect(xx+1,y*32+1,30,30);for(let k=0;k<12;k++){x.fillStyle='rgba(45,37,32,'+(Math.random()*.12)+')';x.fillRect(xx+Math.random()*29,y*32+Math.random()*29,1+Math.random()*3,1+Math.random()*2)}}return c}
 function mapWorldX(px){return px/W*18-9}function mapWorldZ(py){return(py-HUD)/mapH*20-10}
 function projectScenePoint(x,y,z){
- const w=Math.max(1,Math.round(innerWidth*Math.min(devicePixelRatio||1,.62))),h=Math.max(1,Math.round(innerHeight*Math.min(devicePixelRatio||1,.62)));
- const eye=[0,22,22],target=[0,0,0],model=matScale(.52,1,1.25);
- const mvp=mult4(matPerspective(40*Math.PI/180,w/h,.1,100),mult4(matLook(eye,target),model));
+ const dpr=Math.min(devicePixelRatio||1,.62),w=Math.max(1,Math.round(innerWidth*dpr)),h=Math.max(1,Math.round(innerHeight*dpr));
+ // Keep this identical to render3DWorld: same 60-degree camera, aspect ratio, and unscaled world coordinates.
+ const eye=[0,27,37],target=[0,0,0],mvp=mult4(matPerspective(60*Math.PI/180,w/h,.1,100),matLook(eye,target));
  const cx=mvp[0]*x+mvp[4]*y+mvp[8]*z+mvp[12],cy=mvp[1]*x+mvp[5]*y+mvp[9]*z+mvp[13],cw=mvp[3]*x+mvp[7]*y+mvp[11]*z+mvp[15];
  if(cw<=0)return{x:W/2,y:H/2};
  return{x:(cx/cw*.5+.5)*W,y:(1-(cy/cw*.5+.5))*H};
