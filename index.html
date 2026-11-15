@@ -72,21 +72,40 @@ function ftext(x,y,s,c){texts.push({x,y,s,c:c||'#ffe36e',t:1.2})}
 function say(s,c){banner={s,c:c||'#ff8fa0',t:2.6}}
 
 function newGame(){
- const aiNames=['RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
- const vacancy=ri(0,9),rooms=[];let a=0;
- for(let i=0;i<10;i++){
-  const occupied=i!==vacancy;
-  rooms.push({i,row:i%5,name:occupied?aiNames[a++]:'KHALI',occupied,alive:true,door:{lv:1,hp:DOORHP[0],max:DOORHP[0]},bedLv:1,
-   coins:0,turrets:[null,null,null],smart:rnd(.35,1),actT:rnd(0,1.5),sleepPh:rnd(0,6),isPlayer:false,gone:0});
- }
+ const names=['RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
+ const order=Array.from({length:10},(_,i)=>i);for(let i=order.length-1;i>0;i--){const j=ri(0,i);[order[i],order[j]]=[order[j],order[i]]}
+ const vacancy=order.pop(),destinations=order,rooms=[];
+ for(let i=0;i<10;i++)rooms.push({i,row:i%5,name:'KHALI',occupied:false,alive:true,door:{lv:1,hp:DOORHP[0],max:DOORHP[0]},bedLv:1,
+  coins:0,turrets:[null,null,null],smart:rnd(.35,1),actT:rnd(0,1.5),sleepPh:rnd(0,6),isPlayer:false,gone:0,aiId:null});
  PLY=-1;
- G={t:0,rooms,lastPlyAtk:-99,
+ const aiRunners=names.map((name,k)=>({id:k,name,dest:destinations[k],x:corX+corW/2+rnd(-9,9),y:HUD+mapH*(.07+k*.105),walk:rnd(0,6),done:false,room:-1,path:[],step:0,color:[[.82,.27,.20],[.18,.48,.72],[.36,.66,.37],[.77,.50,.19],[.55,.36,.76],[.18,.63,.59],[.75,.34,.49],[.72,.68,.24],[.38,.45,.73]][k]}));
+ G={t:0,rooms,lastPlyAtk:-99,aiRunners,
   ghost:{lv:1,hp:GLV[1].hp,max:GLV[1].hp,x:W/2,y:-40,mode:'spawn',target:-1,lastTarget:-1,ph:0,att:0,fl:0,regenCd:0,ax:W/2,ay:HUD+30},
   lvTimer:50,shake:0,aliveCount:10,dmgDone:0,thud:0,phaseTimer:MOVE_LIMIT,emptyIndex:vacancy,runner:{x:W/2,y:H-44,coins:120,walk:0,settleT:0,fromX:0,fromY:0,toX:0,toY:0}};
+ for(const a of aiRunners)routeAI(a,a.dest,a.x,a.y,false);
  parts=[];texts=[];sheet=null;stick={x:0,y:0};movePointer=null;
- say('Joystick se chalo, kisi khule darwaze se room mein jao!','#9ad7ff');
- state='move';
+ say('Sab corridor mein bhaag rahe hain - apna room chuno!','#9ad7ff');state='move';
 }
+function routeAI(a,dest,sx,sy,relocate){
+ const rm=G.rooms[dest],dp=doorPos(dest),cp=corridorDoorPoint(rm),ip=insideDoorPoint(rm),bp=bedPos(dest),center=corX+corW/2;
+ a.dest=dest;a.done=false;a.room=relocate?a.room:-1;a.step=0;a.relocate=!!relocate;
+ if(relocate){const old=a.room,odp=doorPos(old),ocp=corridorDoorPoint(G.rooms[old]),oip=insideDoorPoint(G.rooms[old]),obp=bedPos(old);a.path=[{x:oip.x,y:oip.y},{x:odp.cx,y:odp.cy},{x:ocp.x,y:ocp.y},{x:center,y:ocp.y},{x:center,y:cp.y},{x:cp.x,y:cp.y},{x:dp.cx,y:dp.cy},{x:ip.x,y:ip.y},{x:bp.cx,y:bp.cy}];}
+ else a.path=[{x:center,y:dp.cy},{x:cp.x,y:cp.y},{x:dp.cx,y:dp.cy},{x:ip.x,y:ip.y},{x:bp.cx,y:bp.cy}];
+}
+function freeRoom(exclude,exceptAI){return G.rooms.find(r=>r.i!==exclude&&!r.occupied&&!G.aiRunners.some(a=>a.id!==exceptAI&&!a.done&&a.dest===r.i))||null}
+function rerouteAIForPlayer(idx){
+ const a=G.aiRunners.find(q=>q.dest===idx&&q.id!==-1);if(!a)return;
+ const free=freeRoom(idx,a.id);if(!free)return;
+ if(a.done&&a.room===idx){
+  const fromRoom=a.room,src=G.rooms[idx],dst=free;
+  for(const k of ['name','door','bedLv','coins','turrets','smart','actT','sleepPh','gone'])dst[k]=src[k];
+  dst.occupied=false;dst.aiId=a.id;const bp=bedPos(idx);a.x=bp.cx;a.y=bp.cy;a.room=fromRoom;src.aiId=null;routeAI(a,dst.i,a.x,a.y,true);return;
+ }
+ routeAI(a,free.i,a.x,a.y,false);
+}
+function settleAI(a){const r=G.rooms[a.dest];r.occupied=true;r.name=a.name;r.aiId=a.id;r.isPlayer=false;a.done=true;a.room=r.i;a.x=bedPos(r.i).cx;a.y=bedPos(r.i).cy}
+function updateAIRunners(dt){if(!G||!G.aiRunners)return;for(const a of G.aiRunners){if(a.done)continue;const p=a.path[a.step];if(!p){settleAI(a);continue}const dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy),step=96*dt;a.walk+=dt*10;if(d<=step+1){a.x=p.x;a.y=p.y;a.step++;if(a.step>=a.path.length)settleAI(a)}else{a.x+=dx/d*step;a.y+=dy/d*step}}}
+
 function startDefense(){
  if(PLY<0){const empty=G.rooms.find(r=>!r.occupied),idx=empty?empty.i:G.emptyIndex,rm=G.rooms[idx],cp=corridorDoorPoint(rm),ip=insideDoorPoint(rm);G.runner.autoRoom=idx;G.runner.path=[cp,ip];G.runner.pathIndex=0;state='autoenter';return}
  state='play';G.phaseTimer=0;G.lastPlyAtk=-99;
@@ -97,9 +116,10 @@ function claimRoom(idx,automatic=false){
  if(PLY>=0||idx<0||idx>=10)return;
  const target=G.rooms[idx],vacancy=G.rooms.find(r=>!r.occupied);
  if(!target||!target.alive)return;
+ rerouteAIForPlayer(idx);
  if(target.occupied&&vacancy&&vacancy!==target){
   for(const k of ['name','alive','door','bedLv','coins','turrets','smart','actT','sleepPh','gone'])vacancy[k]=target[k];
-  vacancy.occupied=true;vacancy.isPlayer=false;
+  vacancy.occupied=false;vacancy.isPlayer=false;
  }
  target.occupied=true;target.alive=true;target.isPlayer=true;target.name='NIRAV';
  target.coins=Math.max(120,G.runner.coins);target.door={lv:1,hp:DOORHP[0],max:DOORHP[0]};target.bedLv=1;target.turrets=[null,null,null];
@@ -142,6 +162,7 @@ function moveRunner(dt){
  G.runner.coins+=2*dt;
  G.phaseTimer-=dt;
  for(const rm of G.rooms)if(rm.occupied&&!rm.isPlayer)aiTick(rm,dt);
+ updateAIRunners(dt);
  if(G.phaseTimer<=0&&state==='move')startDefense();
 }
 
@@ -351,10 +372,12 @@ function update(dt){
  G.t+=dt;
  if(state==='move'||state==='autoenter'){moveRunner(dt);return}
  if(state==='settle'){
+  updateAIRunners(dt);
   for(const rm of G.rooms)if(rm.occupied&&!rm.isPlayer)aiTick(rm,dt);
   const p=G.runner;p.settleT=Math.min(1,p.settleT+dt/SETTLE_TIME);const u=p.settleT*(2-p.settleT);p.x=p.fromX+(p.toX-p.fromX)*u;p.y=p.fromY+(p.toY-p.fromY)*u;
   if(p.settleT>=1)startDefense();return
  }
+ updateAIRunners(dt);
  for(const rm of G.rooms){
   if(!rm.alive||!rm.occupied)continue;
   if(rm.isPlayer)rm.coins+=income(rm)*dt;
@@ -411,6 +434,111 @@ function hpBar(x,y,w,h,frac,c){
  ctx.fillStyle=c;rr(x,y,Math.max(0,w*Math.min(1,frac)),h,2);ctx.fill();
 }
 
+// Lightweight, self-contained WebGL scene for the Haunted Dorm canvas game.
+// Coordinates follow the existing 2D collision map; only rendering moves into 3D.
+const worldCanvas=document.createElement('canvas');
+worldCanvas.id='world3d';worldCanvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none';
+document.body.insertBefore(worldCanvas,cv);cv.style.zIndex='2';
+let gl=null,glProgram=null,glStatic=null,glTex=null,glReady=false,glFrameTimes=[],glLastStat=0,renderStats={webgl:false,fps:0,slowFrames:0,maxFrameMs:0};
+const VERT=`attribute vec3 aPos;attribute vec3 aNormal;attribute vec2 aUV;attribute vec3 aColor;uniform mat4 uMVP;uniform vec3 uEye;varying vec3 vNorm;varying vec3 vPos;varying vec2 vUV;varying vec3 vColor;varying float vDist;void main(){vec4 p=vec4(aPos,1.0);gl_Position=uMVP*p;vNorm=aNormal;vPos=aPos;vUV=aUV;vColor=aColor;vDist=length(uEye-aPos);}`;
+const FRAG=`precision mediump float;uniform vec3 uEye;uniform vec3 uLightPos[6];uniform vec3 uLightCol[6];uniform float uOpacity;uniform sampler2D uTex;uniform float uUseTex;varying vec3 vNorm;varying vec3 vPos;varying vec2 vUV;varying vec3 vColor;varying float vDist;void main(){vec3 n=normalize(vNorm);float key=max(dot(n,normalize(vec3(-0.35,0.85,0.4))),0.0);vec3 lit=vec3(0.34+0.38*key);for(int i=0;i<6;i++){vec3 d=uLightPos[i]-vPos;float len=length(d);float att=max(0.0,1.0-len/9.5);lit+=uLightCol[i]*att*att*max(dot(n,normalize(d)),0.0)*0.72;}float tex=mix(1.0,texture2D(uTex,fract(vUV*3.0)).r, uUseTex*0.28);vec3 color=vColor*lit*tex;float fog=smoothstep(25.0,43.0,vDist);vec3 fogCol=vec3(0.035,0.035,0.065);gl_FragColor=vec4(mix(color,fogCol,fog),uOpacity);}`;
+function shader(type,src){const q=gl.createShader(type);gl.shaderSource(q,src);gl.compileShader(q);if(!gl.getShaderParameter(q,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(q));return q}
+function prog(){const p=gl.createProgram();gl.attachShader(p,shader(gl.VERTEX_SHADER,VERT));gl.attachShader(p,shader(gl.FRAGMENT_SHADER,FRAG));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));return p}
+const VSTRIDE=11;
+function quad(out,a,b,c,d,n,col){for(const v of [a,b,c,a,c,d])out.push(v[0],v[1],v[2],n[0],n[1],n[2],v[3]||0,v[4]||0,col[0],col[1],col[2])}
+function box(out,x,y,z,w,h,d,col){const x0=x-w/2,x1=x+w/2,y0=y-h/2,y1=y+h/2,z0=z-d/2,z1=z+d/2;
+ quad(out,[x0,y0,z1,0,0],[x1,y0,z1,1,0],[x1,y1,z1,1,1],[x0,y1,z1,0,1],[0,0,1],col);
+ quad(out,[x1,y0,z0,0,0],[x0,y0,z0,1,0],[x0,y1,z0,1,1],[x1,y1,z0,0,1],[0,0,-1],col);
+ quad(out,[x1,y0,z1,0,0],[x1,y0,z0,1,0],[x1,y1,z0,1,1],[x1,y1,z1,0,1],[1,0,0],col);
+ quad(out,[x0,y0,z0,0,0],[x0,y0,z1,1,0],[x0,y1,z1,1,1],[x0,y1,z0,0,1],[-1,0,0],col);
+ quad(out,[x0,y1,z1,0,0],[x1,y1,z1,1,0],[x1,y1,z0,1,1],[x0,y1,z0,0,1],[0,1,0],col);
+ quad(out,[x0,y0,z0,0,0],[x1,y0,z0,1,0],[x1,y0,z1,1,1],[x0,y0,z1,0,1],[0,-1,0],col)}
+function plane(out,x0,z0,x1,z1,y,col){quad(out,[x0,y,z0,0,0],[x0,y,z1,0,1],[x1,y,z1,1,1],[x1,y,z0,1,0],[0,1,0],col)}
+function rotBox(out,x,y,z,w,h,d,ang,col){const tmp=[],start=out.length;box(tmp,0,0,0,w,h,d,col);const co=Math.cos(ang),si=Math.sin(ang);for(let i=0;i<tmp.length;i+=VSTRIDE){const px=tmp[i],pz=tmp[i+2],nx=tmp[i+3],nz=tmp[i+5];out.push(x+px*co-pz*si,y+tmp[i+1],z+px*si+pz*co,nx*co-nz*si,tmp[i+4],nx*si+nz*co,tmp[i+6],tmp[i+7],tmp[i+8],tmp[i+9],tmp[i+10])}}
+function sphere(out,x,y,z,r,col,lat=7,lon=10){for(let a=0;a<lat;a++){const t0=Math.PI*a/lat,t1=Math.PI*(a+1)/lat;for(let b=0;b<lon;b++){const q0=2*Math.PI*b/lon,q1=2*Math.PI*(b+1)/lon;const v=(t,q)=>[Math.sin(t)*Math.cos(q),Math.cos(t),Math.sin(t)*Math.sin(q)];const n0=v(t0,q0),n1=v(t0,q1),n2=v(t1,q1),n3=v(t1,q0);const pt=n=>[x+n[0]*r,y+n[1]*r,z+n[2]*r,n[0]*.5+.5,n[2]*.5+.5];quad(out,pt(n0),pt(n3),pt(n2),pt(n1),[0,1,0],col)}}}
+function cylinder(out,x,y,z,r,h,col,steps=8){for(let i=0;i<steps;i++){const a=2*Math.PI*i/steps,b=2*Math.PI*(i+1)/steps,x0=Math.cos(a),z0=Math.sin(a),x1=Math.cos(b),z1=Math.sin(b);const n=[Math.cos((a+b)/2),0,Math.sin((a+b)/2)];quad(out,[x+x0*r,y-h/2,z+z0*r,0,0],[x+x1*r,y-h/2,z+z1*r,1,0],[x+x1*r,y+h/2,z+z1*r,1,1],[x+x0*r,y+h/2,z+z0*r,0,1],n,col)}}
+function mesh(data,dynamic=false){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);return{b,n:data.length/VSTRIDE}}
+function floorTexture(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#b9b2a6';x.fillRect(0,0,128,128);for(let y=0;y<4;y++)for(let i=0;i<4;i++){const ox=(i%2)*16;const xx=i*32+(y%2?16:0);x.fillStyle=['#a9a49a','#c4bdb0','#b2ab9e','#bbb5a9'][(i+y)%4];x.fillRect(xx+1,y*32+1,30,30);x.strokeStyle='rgba(35,29,26,.34)';x.lineWidth=2;x.strokeRect(xx+1,y*32+1,30,30);for(let k=0;k<12;k++){x.fillStyle='rgba(45,37,32,'+(Math.random()*.12)+')';x.fillRect(xx+Math.random()*29,y*32+Math.random()*29,1+Math.random()*3,1+Math.random()*2)}}return c}
+function mapWorldX(px){return px/W*18-9}function mapWorldZ(py){return(py-HUD)/mapH*20-10}
+function init3D(){try{gl=worldCanvas.getContext('webgl',{alpha:false,antialias:false,depth:true,stencil:false,powerPreference:'low-power'});if(!gl)return;glProgram=prog();const floor=floorTexture();glTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,glTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,floor);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);glReady=true;renderStats.webgl=true;buildWorld()}catch(e){console.warn('3D scene unavailable, using canvas fallback',e);glReady=false}}
+function buildWorld(){const a=[];plane(a,-9,-10,9,10,0,[.56,.52,.45]);
+ // Actual raised rooms and an inset long corridor, all open-roof for a clear mobile diorama view.
+ box(a,-5.3,-.12,0,7.35,.25,20,[.36,.31,.29]);box(a,5.3,-.12,0,7.35,.25,20,[.36,.31,.29]);box(a,0,-.11,0,3.2,.22,20,[.22,.19,.25]);
+ // corridor edging and wall sides broken into door-sized openings
+ for(let row=0;row<5;row++){const z=-10+row*4,zc=z+2;
+  for(const side of [-1,1]){const wallX=side*1.72;const gap=1.35,part=(4-gap)/2;box(a,wallX,1.35,z+part/2,.28,2.7,part,[.42,.38,.34]);box(a,wallX,1.35,z+4-part/2,.28,2.7,part,[.34,.31,.30]);
+   // door jamb and lintel, rusty edges, and a small room sign
+   box(a,wallX,1.25,zc-gap/2,.24,2.5,.16,[.54,.34,.20]);box(a,wallX,1.25,zc+gap/2,.24,2.5,.16,[.54,.34,.20]);box(a,wallX,2.55,zc,.26,.22,gap,[.48,.34,.22]);
+  }
+  // cross walls split each bedroom into its own space
+  for(const side of [-1,1]){const xx=side<0?-5.35:5.35;box(a,xx,1.08,z,7.45,2.16,.24,[.33,.30,.29]);}
+  // weathered bed base, mattress, wood headboard, pillow, bedside table, and lit window.
+  for(const side of [-1,1]){const bx=side<0?-6.9:6.9;const bz=zc+.1;
+   box(a,bx,.32,bz,2.65,.48,1.38,[.25,.22,.23]);box(a,bx,.66,bz,2.48,.34,1.26,[.30,.35,.40]);box(a,bx,.91,bz-.52,2.50,.25,.12,[.38,.25,.18]);box(a,bx+side*.70,.90,bz-.42,.58,.16,.34,[.78,.75,.65]);
+   box(a,bx-side*1.85,.38,bz-.10,.74,.76,.72,[.24,.19,.17]);box(a,bx-side*1.85,.79,bz-.10,.82,.08,.80,[.39,.28,.20]);
+   box(a,side*8.88,1.78,zc,.12,.82,1.55,[.16,.43,.52]);box(a,side*8.79,1.78,zc,.07,.94,1.69,[.50,.39,.27]);
+   // a small lamp on the bedside table
+   cylinder(a,bx-side*1.85,1.22,bz-.10,.15,.14,[.9,.63,.29],8);cylinder(a,bx-side*1.85,1.52,bz-.10,.07,.48,[.8,.70,.50],8);
+  }
+  // ceiling cross-beam lights with warm glass.
+  box(a,0,2.64,zc,2.8,.12,.19,[.25,.21,.25]);box(a,0,2.54,zc,1.2,.06,.14,[.95,.70,.35]);
+  // carpet/rug strips and floorboard lines give scale and texture.
+  for(const side of [-1,1]){const cx=side*5.3;plane(a,cx-1.4,z+.45,cx+1.4,z+3.55,.018,[.27,.20,.19]);for(let k=0;k<5;k++)box(a,cx,.02,z+.8+k*.58,4.8,.012,.018,[.37,.31,.27]);}
+ }
+ // outer wall framing and corner columns
+ box(a,-9.0,1.38,0,.28,2.76,20,[.32,.29,.28]);box(a,9.0,1.38,0,.28,2.76,20,[.32,.29,.28]);
+ for(const side of [-1,1])for(let j=0;j<=5;j++)box(a,side*5.3,1.33,-10+j*4,7.48,2.66,.24,[.36,.31,.29]);
+ for(const z of [-10.15,10.15])box(a,0,1.34,z,18,.12,.25,[.42,.36,.31]);
+ // repeated wall trim and central corridor tile seams
+ for(let row=0;row<5;row++){const z=-10+row*4;box(a,0,.012,z+2,3.08,.02,.035,[.45,.34,.23]);}
+ glStatic=mesh(a,false);
+}
+function matScale(x,y,z){return new Float32Array([x,0,0,0,0,y,0,0,0,0,z,0,0,0,0,1])}
+function matPerspective(fov,aspect,near,far){const f=1/Math.tan(fov/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0])}
+function matLook(eye,center){let zx=eye[0]-center[0],zy=eye[1]-center[1],zz=eye[2]-center[2],l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xy=0,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;const yx=zy*xz,yy=zz*xx-zx*xz,yz=-zy*xx;return new Float32Array([xx,yx,zx,0,0,yy,zy,0,xz,yz,zz,0,-(xx*eye[0]+xz*eye[2]),-(yx*eye[0]+yy*eye[1]+yz*eye[2]),-(zx*eye[0]+zy*eye[1]+zz*eye[2]),1])}
+function mult4(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
+function actorBody(out,x,z,color,phase=0){const bob=Math.sin(phase)*.045,step=Math.sin(phase)*.16;sphere(out,x,.55+bob,z,.28,color,6,8);const c=color;box(out,x,.98+bob,z,.44,.58,.30,c);sphere(out,x,1.42+bob,z,.20,[.78,.62,.49],7,9);box(out,x-.29,.97+bob,z,.13,.45,.15,c);box(out,x+.29,.97+bob,z,.13,.45,.15,c);box(out,x-.12,.31,z+step,.13,.34,.15,[.12,.13,.18]);box(out,x+.12,.31,z-step,.13,.34,.15,[.12,.13,.18])}
+function buildDynamic(){const a=[],gh=[];if(!G)return{a,gh};
+ for(const rm of G.rooms){const r=roomRect(rm.i),zc=mapWorldZ(r.y+r.h/2),side=rm.i>=5?1:-1,wallX=side*1.72,gap=1.35,bx=side<0?-6.9:6.9,bz=zc+.1;
+  if(rm.occupied&&rm.alive){if(rm.isPlayer&&state==='settle'){actorBody(a,mapWorldX(G.runner.x),mapWorldZ(G.runner.y),[.9,.55,.22])}else if(rm.isPlayer&&state==='move'){}else{
+    // lying sleeper model over the mattress with a subtle blanket ridge.
+    const cx=bx,zz=bz+.12;box(a,cx,.95,zz,1.30,.18,.66,rm.isPlayer?[.63,.27,.19]:[.33,.42,.58]);sphere(a,cx-.53,1.02,zz,.19,[.76,.65,.53],6,8);box(a,cx+.06,1.08,zz,.82,.10,.48,[.42,.47,.53]);
+   }
+  }
+  // doors are separate moving meshes: open during the run-in; shut until broken during defense.
+  const door=rm.door,open=state==='move'||state==='autoenter'||state==='settle',doorZ=zc;
+  if(open){const hingeZ=doorZ-gap/2;rotBox(a,side*1.84,.94,hingeZ+gap*.48,.085,1.88,gap*.82,side<0?-.72:.72,[.44,.29,.19]);}
+  else if(door.hp>0){box(a,wallX,.97,doorZ,.09,1.92,gap*.88,door.hp<door.max*.55?[.28,.19,.17]:[.40,.26,.16]);box(a,wallX+side*.055,1.0,doorZ,.025,1.72,gap*.72,[.48,.32,.20]);}
+  else{box(a,wallX,.13,doorZ,.12,.20,.82,[.22,.16,.14]);rotBox(a,side*1.8,.16,doorZ,.11,.25,1.08,side*.18,[.25,.17,.14]);}
+  for(let k=0;k<3;k++){const t=rm.turrets[k];if(!t)continue;const tx=mapWorldX(turretPos(rm.i,k).x),tz=mapWorldZ(turretPos(rm.i,k).y);cylinder(a,tx,.20,tz,.26,.34,[.10,.24,.30],8);sphere(a,tx,.50,tz,.24,[.12,.70,.85],7,9);box(a,tx+(side<0?.34:-.34),.53,tz,.46,.10,.12,[.55,.81,.85]);}
+ }
+ // Nine distinct AI runners race down the corridor and pass through their own doorways.
+ if(G.aiRunners)for(const q of G.aiRunners)if(!q.done)actorBody(a,mapWorldX(q.x),mapWorldZ(q.y),q.color,q.walk);
+ // The user-controlled figure roams the corridor until an actual door crossing claims a room.
+ if(state==='move'||state==='autoenter')actorBody(a,mapWorldX(G.runner.x),mapWorldZ(G.runner.y),[.94,.57,.24],G.runner.walk);
+ const g=G.ghost,gx=mapWorldX(g.x),gz=mapWorldZ(g.y);if(g.mode!=='spawn'){
+  sphere(gh,gx,.88,gz,.43,[.57,.37,.91],8,10);cylinder(gh,gx,.45,gz,.31,.38,[.44,.30,.75],9);sphere(gh,gx-.14,1.00,gz+.34,.075,[.95,.91,1],6,8);sphere(gh,gx+.14,1.00,gz+.34,.075,[.95,.91,1],6,8);sphere(gh,gx-.13,1.00,gz+.40,.035,[.08,.05,.13],5,7);sphere(gh,gx+.15,1.00,gz+.40,.035,[.08,.05,.13],5,7);
+ }
+ return{a,gh};
+}
+function bufferMesh(m,dat){gl.bindBuffer(gl.ARRAY_BUFFER,m.b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(dat),gl.DYNAMIC_DRAW);m.n=dat.length/VSTRIDE}
+function renderMesh(m,mvp,eye,opacity=1,useTex=1){if(!m||!m.n)return;gl.bindBuffer(gl.ARRAY_BUFFER,m.b);const p=glProgram;gl.useProgram(p);const stride=VSTRIDE*4;let at=0;for(const [name,size] of [['aPos',3],['aNormal',3],['aUV',2],['aColor',3]]){const loc=gl.getAttribLocation(p,name);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,stride,at);at+=size*4}gl.uniformMatrix4fv(gl.getUniformLocation(p,'uMVP'),false,mvp);gl.uniform3fv(gl.getUniformLocation(p,'uEye'),eye);const poses=[],cols=[];for(let i=0;i<6;i++){const rz=-10+i*4;poses.push(0,2.5,rz);cols.push(.86,.60,.30)}poses.push(eye[0],2.2,eye[2]);cols.push(.46,.35,.82);gl.uniform3fv(gl.getUniformLocation(p,'uLightPos[0]'),new Float32Array(poses));gl.uniform3fv(gl.getUniformLocation(p,'uLightCol[0]'),new Float32Array(cols));gl.uniform1f(gl.getUniformLocation(p,'uOpacity'),opacity);gl.uniform1f(gl.getUniformLocation(p,'uUseTex'),useTex);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,glTex);gl.uniform1i(gl.getUniformLocation(p,'uTex'),0);gl.drawArrays(gl.TRIANGLES,0,m.n)}
+function render3DWorld(){if(!glReady||!G)return;const dpr=Math.min(devicePixelRatio||1,1.5);const w=Math.round(innerWidth*dpr),h=Math.round(innerHeight*dpr);if(worldCanvas.width!==w||worldCanvas.height!==h){worldCanvas.width=w;worldCanvas.height=h;gl.viewport(0,0,w,h)}
+ const t=performance.now();if(glLastStat){const gap=t-glLastStat;glFrameTimes.push(gap);if(glFrameTimes.length>90)glFrameTimes.shift();if(gap>33)renderStats.slowFrames++;renderStats.maxFrameMs=Math.max(renderStats.maxFrameMs,gap);if(t-renderStats._start>1000){renderStats.fps=Math.round(1000*glFrameTimes.length/glFrameTimes.reduce((a,b)=>a+b,0));renderStats._start=t;renderStats.slowFramesRecent=renderStats.slowFrames;renderStats.slowFrames=0;renderStats.maxFrameMsRecent=Math.round(renderStats.maxFrameMs);renderStats.maxFrameMs=0}}else renderStats._start=t;glLastStat=t;
+ gl.enable(gl.DEPTH_TEST);gl.clearColor(.035,.035,.065,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);const eye=[0,22,22],target=[0,0,0],aspect=w/h,view=matLook(eye,target),model=matScale(.52,1,1.25),mvp=mult4(matPerspective(40*Math.PI/180,aspect,.1,100),mult4(view,model));if(glStatic)renderMesh(glStatic,mvp,eye,1,1);const dyn=buildDynamic();if(!glActors)glActors=mesh([],true);bufferMesh(glActors,dyn.a);renderMesh(glActors,mvp,eye,1,1);if(dyn.gh.length){if(!glGhost)glGhost=mesh([],true);bufferMesh(glGhost,dyn.gh);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);renderMesh(glGhost,mvp,eye,.88,0);gl.depthMask(true);gl.disable(gl.BLEND)}
+}
+let glActors=null,glGhost=null;
+window.__renderStats=renderStats;
+function render3D(){if(glReady)render3DWorld()}
+window.addEventListener('resize',()=>{if(gl&&glReady)gl.viewport(0,0,worldCanvas.width,worldCanvas.height)});
+init3D();
+
+// This software renderer is intentionally small: static room geometry is uploaded once,
+// only the characters, doors and defenses use a compact dynamic buffer per frame.
+// A safe canvas fallback remains available on devices without WebGL support.
+// End lightweight WebGL renderer.
+
+// Replace matLook later if syntax errors show.
 function drawMap(){
  const floor=ctx.createLinearGradient(0,HUD,W,H);floor.addColorStop(0,'#1b1433');floor.addColorStop(.48,'#100c22');floor.addColorStop(1,'#1a1230');
  ctx.fillStyle=floor;ctx.fillRect(0,HUD,W,mapH);
@@ -689,7 +817,7 @@ function drawTitle(){
 }
 let playBtn=null;
 function drawEnd(){
- drawMap();drawParts();
+ if(!glReady)drawMap();drawParts();
  ctx.fillStyle='rgba(8,6,20,.82)';ctx.fillRect(0,0,W,H);
  if(state==='win'){
   bigText('BHOOT MARR GAYA!',W/2,H*.34,34,'#9dffb0','#2f9d5c');
@@ -743,9 +871,10 @@ function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  if((state==='move'||state==='autoenter'||state==='settle'||state==='play')&&G)update(dt);
  ctx.clearRect(0,0,W,H);
+ if(glReady&&G&&(state==='move'||state==='autoenter'||state==='settle'||state==='play'||state==='win'||state==='lose'))render3DWorld();
  if(state==='title')drawTitle();
- else if(state==='move'||state==='autoenter'||state==='settle'){drawMap();drawRunner();drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
- else if(state==='play'){drawMap();drawGhost();drawParts();drawHUD();drawSheet();
+ else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){drawMap();drawRunner()}drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
+ else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
  else drawEnd();
@@ -770,7 +899,7 @@ window.__h={
  ownUpgTur:(k)=>upgTur(player(),k),
  summary:()=>({state,t:G?G.t:0,ghost:G?{lv:G.ghost.lv,hp:Math.round(G.ghost.hp),mode:G.ghost.mode,target:G.ghost.target,
   enterStage:G.ghost.eStage,exitStage:G.ghost.exitStage,x:Math.round(G.ghost.x),y:Math.round(G.ghost.y)}:null,
-  alive:G?G.aliveCount:0,phase:state,playerRoom:PLY,
+  alive:G?G.aliveCount:0,phase:state,playerRoom:PLY,ai:G?G.aiRunners.map(a=>({name:a.name,room:a.room,dest:a.dest,done:a.done,x:Math.round(a.x),y:Math.round(a.y)})):[],
   rooms:G?G.rooms.map(r=>({name:r.name,alive:r.alive,player:r.isPlayer,bed:r.bedLv,doorLv:r.door.lv,doorHp:Math.round(r.door.hp),tur:r.turrets.map(t=>t?t.lv:0)})):[]})
 };
 </script></body></html>
