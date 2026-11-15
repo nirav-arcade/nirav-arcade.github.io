@@ -419,8 +419,8 @@ function update(dt){
    if(p.bullet){
     if(state==='play'&&G.ghost.hp>0){
      hurtGhost(p.damage);G.ghost.fl=Math.max(G.ghost.fl,.24);
-     parts.push({x:p.tx,y:p.ty,vx:0,vy:0,life:.30,maxLife:.30,c:'#fff2a8',impact:true});
-     for(let n=0;n<7;n++){const a=n*Math.PI*2/7+Math.random()*.18,sp=38+Math.random()*48;parts.push({x:p.tx,y:p.ty,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.26,maxLife:.26,c:n%2?'#fff3a1':'#c8f6ff',spark:true,s:2+Math.random()*2})}
+     parts.push({x:p.tx,y:p.ty,vx:0,vy:0,life:.38,maxLife:.38,c:'#fff2a8',impact:true});
+     for(let n=0;n<8;n++){const a=n*Math.PI*2/8+Math.random()*.18,sp=42+Math.random()*54;parts.push({x:p.tx,y:p.ty,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.34,maxLife:.34,c:n%2?'#fff3a1':'#c8f6ff',spark:true,s:3+Math.random()*2.5})}
     }
    }
    parts.splice(i,1);
@@ -732,10 +732,11 @@ function drawParts(){
    ctx.shadowBlur=0;ctx.fillStyle='#ffc84c';ctx.beginPath();ctx.arc(p.x,p.y,2.5*pulse,0,Math.PI*2);ctx.fill();
    ctx.strokeStyle='rgba(255,247,196,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,6*pulse,0,Math.PI*2);ctx.stroke();
   }else if(p.impact){
-   const q=1-p.life/p.maxLife,r=4+q*23;ctx.strokeStyle='#fff0a3';ctx.lineWidth=3*(1-q)+.5;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();
-   ctx.fillStyle='rgba(255,237,164,'+(1-q)+')';ctx.beginPath();ctx.arc(p.x,p.y,3+q*5,0,Math.PI*2);ctx.fill();
+   const q=1-p.life/p.maxLife,r=5+q*26;ctx.shadowColor='#ffe47a';ctx.shadowBlur=8*(1-q)+2;ctx.strokeStyle='#fff0a3';ctx.lineWidth=3.2*(1-q)+.7;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
+   ctx.strokeStyle='rgba(213,250,255,'+(1-q)*.85+')';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,r*.52,0,Math.PI*2);ctx.stroke();
+   ctx.fillStyle='rgba(255,248,209,'+(1-q)+')';ctx.beginPath();ctx.arc(p.x,p.y,6*(1-q)+1.5,0,Math.PI*2);ctx.fill();
   }else if(p.spark){
-   ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s*(.45+alpha*.55),0,Math.PI*2);ctx.fill();
+   ctx.shadowColor=p.c;ctx.shadowBlur=5;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s*(.6+alpha*.5),0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
   }else if(p.muzzle){
    const r=2+(0.11-p.life)*24;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
   }else{ctx.fillStyle=p.c;ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)}
