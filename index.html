@@ -752,8 +752,9 @@ function drawCombatStatus(){
   ctx.fillStyle='#bf7bff';rr(x-w/2+6,y+13,(w-12)*frac,5,2);ctx.fill();
  }
 }
-function drawParts(){
+function drawParts(screenSpaceOnly=false){
  for(const p of parts){
+  if(screenSpaceOnly&&!(p.bullet||p.muzzle||p.impact||p.spark))continue;
   const alpha=Math.max(0,Math.min(1,p.bullet?p.life/p.maxLife:(p.impact||p.spark)?p.life/p.maxLife:p.muzzle?p.life*9:p.life*2.4));
   ctx.globalAlpha=alpha;
   if(p.bullet){
@@ -772,6 +773,7 @@ function drawParts(){
   }else{ctx.fillStyle=p.c;ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)}
   ctx.globalAlpha=1;
  }
+ if(screenSpaceOnly)return;
  for(const t of texts){
   ctx.globalAlpha=Math.max(0,Math.min(1,t.t));
   ctx.fillStyle=t.c;ctx.font='800 13px system-ui';ctx.textAlign='center';
@@ -976,7 +978,7 @@ function frame(now){
  if(glReady&&G&&(state==='move'||state==='autoenter'||state==='settle'||state==='play'||state==='win'||state==='lose'))render3DWorld();
  if(state==='title')drawTitle();
  else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){ctx.save();worldTransform();drawMap();drawAIRunners();drawRunner();drawParts();ctx.restore()}else drawWebGLSlotMarkers();drawHUD();drawCameraHint();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
- else if(state==='play'){if(!glReady){ctx.save();worldTransform();drawMap();drawGhost();drawParts();ctx.restore()}else drawWebGLSlotMarkers();drawHUD();drawCameraHint();drawCombatStatus();drawShopButton();drawSheet();
+ else if(state==='play'){if(!glReady){ctx.save();worldTransform();drawMap();drawGhost();drawParts();ctx.restore()}else{drawWebGLSlotMarkers();drawParts(true)}drawHUD();drawCameraHint();drawCombatStatus();drawShopButton();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
  else drawEnd();
