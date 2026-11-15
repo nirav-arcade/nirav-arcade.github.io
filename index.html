@@ -61,17 +61,26 @@ const NAMES=['NIRAV','RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','N
 const GLV=[null];for(let i=1;i<=14;i++)GLV.push({hp:Math.round(2600*Math.pow(1.5,i-1)),dmg:+(11*Math.pow(1.34,i-1)).toFixed(1),spd:30+3*i});
 
 // ---------- state ----------
-let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=true;
+let state='title',G=null,sheet=null,parts=[],texts=[],banner=null,AC=null,audioOn=localStorage.getItem('nhd3_mute')!=='1',ambience=null,ambienceNodes=[];
 let stick={x:0,y:0},movePointer=null,pDown=null;
 const PLAYER_R=7,MOVE_LIMIT=22,SETTLE_TIME=1.15,JOY_R=42;
 let best=+localStorage.getItem('nhd3_best')||0;
-function beep(f,d,type,v,slide){if(!audioOn)return;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),AC.currentTime+d);g.gain.value=v||.05;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function ensureAudio(){try{if(!audioOn)return false;if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume().catch(()=>{});return AC.state==='running'||AC.state==='suspended'}catch(e){audioOn=false;return false}}
+function beep(f,d,type,v,slide){if(!ensureAudio())return;try{const o=AC.createOscillator(),g=AC.createGain(),now=AC.currentTime;o.type=type||'sine';o.frequency.setValueAtTime(f,now);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),now+d);g.gain.setValueAtTime(v||.05,now);g.gain.exponentialRampToValueAtTime(.0001,now+d);o.connect(g);g.connect(AC.destination);o.start(now);o.stop(now+d+.01)}catch(e){}}
+function startAmbience(){if(!ensureAudio()||ambience)return;try{const now=AC.currentTime,master=AC.createGain();master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.018,now+1.8);master.connect(AC.destination);ambienceNodes=[master];for(const [freq,vol,wave] of [[55,.55,'sine'],[82.4,.28,'triangle'],[110,.12,'sine']]){const o=AC.createOscillator(),g=AC.createGain();o.type=wave;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(master);o.start(now);ambienceNodes.push(o,g)}ambience=master}catch(e){ambience=null;ambienceNodes=[]}}
+function stopAmbience(){if(!AC||!ambience)return;const now=AC.currentTime,old=ambience,nodes=ambienceNodes;try{old.gain.cancelScheduledValues(now);old.gain.setTargetAtTime(.0001,now,.18);setTimeout(()=>{for(const n of nodes)if(n!==old)try{n.stop()}catch(e){};try{old.disconnect()}catch(e){}},700)}catch(e){}ambience=null;ambienceNodes=[]}
+function updateSound(dt){if(!audioOn||!G||state!=='play')return;const rm=player();if(!rm||!rm.alive)return;G.coinSoundT=(G.coinSoundT||0)+dt;if(G.coinSoundT>=1){G.coinSoundT-=1;beep(880,.055,'sine',.025,1.35)}const gh=G.ghost,dp=doorPos(rm.i),dist=Math.hypot(gh.x-dp.cx,gh.y-dp.cy),near=gh.mode==='travel'||gh.mode==='attack';if(near&&dist<rowH*3){G.heartCd=(G.heartCd||0)-dt;if(G.heartCd<=0){const intensity=1-dist/(rowH*3);beep(58+intensity*12,.11,'sine',.025+intensity*.035,.78);setTimeout(()=>beep(52+intensity*10,.10,'sine',.018+intensity*.026,.82),130);G.heartCd=.95-intensity*.43}}else G.heartCd=0}
+function setAudioEnabled(on){audioOn=!!on;try{localStorage.setItem('nhd3_mute',audioOn?'0':'1')}catch(e){}if(!audioOn)stopAmbience();else{ensureAudio();if(state==='play')startAmbience()}syncAudioUI()}
+const audioToggle=document.createElement('button');audioToggle.type='button';if(audioToggle.style){audioToggle.style.cssText='position:fixed;left:10px;bottom:12px;z-index:5;width:42px;height:38px;border:1px solid #8e74c8;border-radius:12px;background:linear-gradient(145deg,#43346a,#211a3d);color:#fff;font:800 17px system-ui;box-shadow:0 0 12px rgba(170,115,255,.3);touch-action:manipulation;display:none'}if(audioToggle.setAttribute)audioToggle.setAttribute('aria-label','Toggle sound');if(audioToggle.addEventListener)audioToggle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setAudioEnabled(!audioOn)});if(document.body.appendChild&&audioToggle.addEventListener)document.body.appendChild(audioToggle);
+const shopShortcut=document.createElement('button');shopShortcut.type='button';shopShortcut.textContent='🛒 SHOP';if(shopShortcut.style){shopShortcut.style.cssText='position:fixed;right:10px;bottom:12px;z-index:5;width:86px;height:38px;border:1px solid #d894ff;border-radius:12px;background:linear-gradient(145deg,#be48ef,#6729a6);color:#fff;font:800 13px system-ui;box-shadow:0 0 14px rgba(190,72,239,.48);touch-action:manipulation;display:none'}if(shopShortcut.setAttribute)shopShortcut.setAttribute('aria-label','Open shop');if(shopShortcut.addEventListener)shopShortcut.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state==='play'&&PLY>=0&&!sheet){openSheet(player());beep(500,.06,'sine',.04)}});if(document.body.appendChild&&shopShortcut.addEventListener)document.body.appendChild(shopShortcut);
+function syncAudioUI(){if(!audioToggle||!shopShortcut||!audioToggle.style||!shopShortcut.style)return;const show=state==='play'&&PLY>=0&&!sheet;audioToggle.style.display=show?'block':'none';shopShortcut.style.display=show?'block':'none';audioToggle.textContent=audioOn?'🔊':'🔇';if(audioToggle.setAttribute)audioToggle.setAttribute('aria-label',audioOn?'Mute sound':'Unmute sound')}
 function rnd(a,b){return a+Math.random()*(b-a)}
 function ri(a,b){return Math.floor(rnd(a,b+1))}
 function ftext(x,y,s,c){texts.push({x,y,s,c:c||'#ffe36e',t:1.2})}
 function say(s,c){banner={s,c:c||'#ff8fa0',t:2.6}}
 
 function newGame(){
+ ensureAudio();stopAmbience();
  const names=['RAHUL','PRIYA','AMAN','POOJA','ROHAN','SIMRAN','VIKRAM','NEHA','KABIR'];
  const order=Array.from({length:10},(_,i)=>i);for(let i=order.length-1;i>0;i--){const j=ri(0,i);[order[i],order[j]]=[order[j],order[i]]}
  const vacancy=order.pop(),destinations=order,rooms=[];
@@ -108,7 +117,7 @@ function updateAIRunners(dt){if(!G||!G.aiRunners)return;for(const a of G.aiRunne
 
 function startDefense(){
  if(PLY<0){const empty=G.rooms.find(r=>!r.occupied),idx=empty?empty.i:G.emptyIndex,rm=G.rooms[idx],cp=corridorDoorPoint(rm),ip=insideDoorPoint(rm);G.runner.autoRoom=idx;G.runner.path=[cp,ip];G.runner.pathIndex=0;state='autoenter';return}
- state='play';G.phaseTimer=0;G.lastPlyAtk=-99;
+ state='play';G.phaseTimer=0;G.lastPlyAtk=-99;startAmbience();
  G.ghost.mode='spawn';G.ghost.x=W/2;G.ghost.y=-40;G.ghost.target=-1;G.ghost.lastTarget=-1;
  G.lvTimer=50;say('Defense shuru! Bhoot tumhare peeche aayega!','#ffbd5b');
 }
@@ -307,7 +316,7 @@ function updateGhost(dt){
    G.shake=Math.max(G.shake,1.4);
    gh.att+=dt;
    const dp=doorPos(rm.i);
-   if(gh.att>.5){gh.att=0;beep(90,.09,'square',.045);
+   if(gh.att>.5){gh.att=0;if(rm.isPlayer)beep(78,.13,'triangle',.055,.58);else beep(90,.09,'square',.025);
     parts.push({x:dp.cx+rnd(-10,10),y:dp.cy+rnd(-16,16),vx:rnd(-30,30),vy:rnd(-60,-10),life:.5,c:'#c9a24a',s:3})}
    if(gh.hp<gh.max*.20&&gh.regenCd<=0){gh.mode='flee';gh.fy=HUD+20;say('Bhoot bhaag raha hai!','#9dffb0')}
    // gives up on a door that holds too long - moves to the next room like the real game
@@ -396,18 +405,18 @@ function update(dt){
     t.cd=.5;t.kick=.1;
     hurtGhost(TURLV[t.lv-1].dmg*.5);
     parts.push({x:tp.x,y:tp.y,vx:0,vy:0,life:.22,c:'#9aeaff',s:3,bolt:true,tx:gh.x,ty2:gh.y});
-    beep(620,.05,'square',.016,.6);
+    if(rm.isPlayer)beep(620,.055,'square',.028,.55);
    }
   }
  }
- updateGhost(dt);
+ updateGhost(dt);updateSound(dt);
  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)parts.splice(i,1)}
  for(let i=texts.length-1;i>=0;i--){texts[i].t-=dt;texts[i].y-=22*dt;if(texts[i].t<=0)texts.splice(i,1)}
  if(banner){banner.t-=dt;if(banner.t<=0)banner=null}
  G.shake*=.86;
 }
 function finish(win){
- state=win?'win':'lose';
+ state=win?'win':'lose';stopAmbience();
  if(win){beep(660,.4,'sine',.07);setTimeout(()=>beep(880,.5,'sine',.07),180);
   const sc=Math.round(G.t);if(!best||sc<best){best=sc;localStorage.setItem('nhd3_best',best)}}
  else{beep(55,1,'sawtooth',.09,.4)}
@@ -891,7 +900,7 @@ function frame(now){
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
  else drawEnd();
- requestAnimationFrame(frame);
+ syncAudioUI();requestAnimationFrame(frame);
 }
 resize();
 requestAnimationFrame(frame);
