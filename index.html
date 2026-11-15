@@ -20,30 +20,31 @@ addEventListener('orientationchange',()=>setTimeout(resize,120));
 
 // ---------- layout ----------
 const HUD=56;
-let corX,corW,roomW,rowH,mapH,PLY=-1;
+let corX,corW,roomW,rowH,mapH,roomGap=8,PLY=-1;
 function layout(){
  mapH=H-HUD;
  corW=Math.max(50,Math.min(70,W*.17));
  corX=(W-corW)/2;
- roomW=(W-corW)/2;
+ roomGap=Math.max(6,Math.min(10,W*.025));
+ roomW=corX-roomGap*1.5;
  rowH=mapH/5;
 }
 // rooms: i = side*5 + row ; side 0 = left, 1 = right
 function roomRect(i){
  const s=(i>=5)?1:0,r=i%5;
- return{x:s?corX+corW:0,y:HUD+r*rowH,w:roomW,h:rowH,side:s,row:r};
+ return{x:s?corX+corW+roomGap:roomGap*.5,y:HUD+r*rowH+roomGap*.5,w:roomW,h:rowH-roomGap,side:s,row:r};
 }
 // Fallback camera: zoom into the player's room in defense, and let touch drags pan the map.
-let mapCam={x:180,y:428,zoom:1.18,manual:false};
-function resetMapCamera(){mapCam={x:W/2,y:HUD+mapH/2,zoom:1.18,manual:false}}
-function syncMapCamera(){if(!mapCam.manual){if(state==='play'&&PLY>=0){const r=roomRect(PLY);mapCam.x=r.x+r.w/2;mapCam.y=r.y+r.h/2;mapCam.zoom=1.62}else{mapCam.x=W/2;mapCam.y=HUD+mapH/2;mapCam.zoom=1.18}}}
+let mapCam={x:180,y:428,zoom:1.62,manual:false};
+function resetMapCamera(){mapCam={x:W/2,y:HUD+mapH/2,zoom:1.62,manual:false}}
+function syncMapCamera(){if(!mapCam.manual){mapCam.zoom=1.62;if(state==='play'&&PLY>=0){const r=roomRect(PLY);mapCam.x=r.x+r.w/2;mapCam.y=r.y+r.h/2}else{mapCam.x=W/2;mapCam.y=HUD+mapH/2}}}
 function worldTransform(){const cx=W/2,cy=HUD+mapH/2;ctx.beginPath();ctx.rect(0,HUD,W,mapH);ctx.clip();ctx.translate(cx,cy);ctx.scale(mapCam.zoom,mapCam.zoom);ctx.translate(-mapCam.x,-mapCam.y)}
 function screenToWorld(x,y){return{x:mapCam.x+(x-W/2)/mapCam.zoom,y:mapCam.y+(y-(HUD+mapH/2))/mapCam.zoom}}
 function clampMapCamera(){const z=mapCam.zoom;mapCam.x=Math.max(W/2-W/(2*z),Math.min(W/2+W/(2*z),mapCam.x));mapCam.y=Math.max(HUD+mapH/2-mapH/(2*z),Math.min(HUD+mapH/2+mapH/(2*z),mapCam.y))}
 function doorPos(rm){
  const r=roomRect(rm);
  // The opening sits directly on the corridor/room boundary and is wide enough for the ghost to pass.
- const x=r.side?corX+corW:corX-22;
+ const x=r.side?corX+corW:r.x+r.w-22;
  return{x:x,y:r.y+r.h/2-23,w:22,h:46,cx:x+11,cy:r.y+r.h/2};
 }
 function bedPos(rm){
@@ -148,7 +149,8 @@ function claimRoom(idx,automatic=false){
 function roomForPoint(x,y){
  if(x>=corX&&x<=corX+corW)return -1;
  const row=Math.max(0,Math.min(4,Math.floor((y-HUD)/rowH)));
- return (x>corX+corW?5:0)+row;
+ const i=(x>corX+corW?5:0)+row,r=roomRect(i);
+ return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h?i:-1;
 }
 function moveRunner(dt){
  if(!G)return;
@@ -502,7 +504,7 @@ function projectScenePoint(x,y,z){
 }
 function turretMuzzle(rm,k){
  const tp=turretPos(rm.i,k),side=rm.i>=5?1:-1;
- if(!glReady)return{x:tp.x+(side>0?-10:10),y:tp.y};
+ if(!glReady)return{x:tp.x+(side>0?-12:12),y:tp.y};
  const tx=mapWorldX(tp.x),tz=mapWorldZ(tp.y);
  // Match the tip of the barrel mesh in buildDynamic, not a guessed room/door coordinate.
  return projectScenePoint(tx+(side<0?.57:-.57),.53,tz);
@@ -514,6 +516,8 @@ function buildWorld(){const a=[];plane(a,-9,-10,9,10,0,[.56,.52,.45]);
  box(a,-5.3,-.12,0,7.35,.25,20,[.36,.31,.29]);box(a,5.3,-.12,0,7.35,.25,20,[.36,.31,.29]);box(a,0,-.11,0,3.2,.22,20,[.22,.19,.25]);
  // corridor edging and wall sides broken into door-sized openings
  for(let row=0;row<5;row++){const z=-10+row*4,zc=z+2;
+  // Dark separator strips expose a continuous floor gap between bedroom slabs.
+  if(row>0)for(const side of [-1,1])plane(a,side<0?-8.9:1.9,z-.085,side<0?-1.9:8.9,z+.085,.012,[.12,.10,.15]);
   for(const side of [-1,1]){const wallX=side*1.72;const gap=1.35,part=(4-gap)/2;box(a,wallX,1.35,z+part/2,.28,2.7,part,[.42,.38,.34]);box(a,wallX,1.35,z+4-part/2,.28,2.7,part,[.34,.31,.30]);
    // door jamb and lintel, rusty edges, and a small room sign
    box(a,wallX,1.25,zc-gap/2,.24,2.5,.16,[.54,.34,.20]);box(a,wallX,1.25,zc+gap/2,.24,2.5,.16,[.54,.34,.20]);box(a,wallX,2.55,zc,.26,.22,gap,[.48,.34,.22]);
@@ -556,7 +560,7 @@ function buildDynamic(){const a=[],gh=[];if(!G)return{a,gh};
   // doors are separate moving meshes: open during the run-in; shut until broken during defense.
   const door=rm.door,open=state==='move'||state==='autoenter'||state==='settle',doorZ=zc;
   if(open){const hingeZ=doorZ-gap/2;rotBox(a,side*1.84,.94,hingeZ+gap*.48,.085,1.88,gap*.82,side<0?-.72:.72,[.44,.29,.19]);}
-  else if(door.hp>0){box(a,wallX,.97,doorZ,.09,1.92,gap*.88,door.hp<door.max*.55?[.28,.19,.17]:[.40,.26,.16]);box(a,wallX+side*.055,1.0,doorZ,.025,1.72,gap*.72,[.48,.32,.20]);}
+  else if(door.hp>0){const doorMaterials=[[.57,.34,.16],[.44,.48,.54],[.68,.73,.78],[.25,.43,.60],[.76,.57,.20]],mat=doorMaterials[Math.max(0,Math.min(doorMaterials.length-1,door.lv-1))],face=door.hp<door.max*.55?mat.map(v=>v*.68):mat;box(a,wallX,.97,doorZ,.09,1.92,gap*.88,face);box(a,wallX+side*.055,1.0,doorZ,.025,1.72,gap*.72,mat.map(v=>Math.min(1,v*1.22)));if(door.lv>=2){for(const zoff of [-gap*.29,gap*.29])cylinder(a,wallX+side*.07,1.0,doorZ+zoff,.055,1.74,[.82,.85,.88],8);}}
   else{box(a,wallX,.13,doorZ,.12,.20,.82,[.22,.16,.14]);rotBox(a,side*1.8,.16,doorZ,.11,.25,1.08,side*.18,[.25,.17,.14]);}
   for(let k=0;k<3;k++){const t=rm.turrets[k];if(!t)continue;const tx=mapWorldX(turretPos(rm.i,k).x),tz=mapWorldZ(turretPos(rm.i,k).y);cylinder(a,tx,.20,tz,.26,.34,[.10,.24,.30],8);sphere(a,tx,.50,tz,.24,[.12,.70,.85],7,9);box(a,tx+(side<0?.34:-.34),.53,tz,.46,.10,.12,[.55,.81,.85]);}
  }
@@ -564,8 +568,15 @@ function buildDynamic(){const a=[],gh=[];if(!G)return{a,gh};
  if(G.aiRunners)for(const q of G.aiRunners)if(!q.done)actorBody(a,mapWorldX(q.x),mapWorldZ(q.y),q.color,q.walk);
  // The user-controlled figure roams the corridor until an actual door crossing claims a room.
  if(state==='move'||state==='autoenter')actorBody(a,mapWorldX(G.runner.x),mapWorldZ(G.runner.y),[.94,.57,.24],G.runner.walk);
- const g=G.ghost,gx=mapWorldX(g.x),gz=mapWorldZ(g.y);if(g.mode!=='spawn'){
-  sphere(gh,gx,.88,gz,.43,[.57,.37,.91],8,10);cylinder(gh,gx,.45,gz,.31,.38,[.44,.30,.75],9);sphere(gh,gx-.14,1.00,gz+.34,.075,[.95,.91,1],6,8);sphere(gh,gx+.14,1.00,gz+.34,.075,[.95,.91,1],6,8);sphere(gh,gx-.13,1.00,gz+.40,.035,[.08,.05,.13],5,7);sphere(gh,gx+.15,1.00,gz+.40,.035,[.08,.05,.13],5,7);
+ const g=G.ghost,gx=mapWorldX(g.x),gz=mapWorldZ(g.y),bob=Math.sin(g.ph)*.05;if(g.mode!=='spawn'){
+  // Lean 3D horror silhouette: tattered grey robe, pale face, hanging hair and ember eyes.
+  for(let i=0;i<4;i++)sphere(gh,gx+Math.sin(g.ph*1.5+i*1.6)*.28,.28+i*.18+bob,gz+Math.cos(g.ph+i)*.20,.18+i*.025,[.15,.17,.20],5,6);
+  box(gh,gx,1.05+bob,gz,.52,.82,.34,[.30,.32,.33]);box(gh,gx, .62+bob,gz,.75,.46,.42,[.24,.26,.28]);
+  for(const dx of [-.25,-.08,.12,.30])box(gh,gx+dx,.43+bob,gz,.055,.38,.38,[.18,.20,.22]);
+  box(gh,gx-.43,.93+bob,gz,.16,.70,.17,[.25,.27,.29]);box(gh,gx+.43,.93+bob,gz,.16,.70,.17,[.25,.27,.29]);
+  sphere(gh,gx,1.68+bob,gz,.27,[.72,.70,.65],8,10);sphere(gh,gx,1.86+bob,gz,.30,[.09,.10,.12],7,9);
+  for(const dx of [-.20,-.09,.06,.19])box(gh,gx+dx,1.65+bob,gz+.18,.055,.53,.06,[.055,.06,.07]);
+  sphere(gh,gx-.08,1.69+bob,gz+.25,.035,[1,.12,.10],5,6);sphere(gh,gx+.08,1.69+bob,gz+.25,.035,[1,.12,.10],5,6);
  }
  return{a,gh};
 }
@@ -617,8 +628,9 @@ function drawTurretSlotMarker(x,y,k,occupied=false){ctx.save();ctx.globalAlpha=o
 function drawRoom(rm){
  const r=roomRect(rm.i);
  const dead=!rm.alive;
+ // Room slabs are inset from their neighbours, exposing a dark floor gutter on all four sides.
  // shallow 3D room slabs: soft cast shadow, lit floor, beveled wall edges
- ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(r.x+2,r.y+5,r.w-3,r.h-5);
+ ctx.fillStyle='rgba(0,0,0,.52)';ctx.fillRect(r.x+2,r.y+5,r.w-3,r.h-5);
  const floor=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);
  floor.addColorStop(0,dead?'#171121':(rm.row%2?'#332852':'#2d2449'));
  floor.addColorStop(.52,dead?'#0d0a18':(rm.row%2?'#211a36':'#201932'));
@@ -626,8 +638,8 @@ function drawRoom(rm){
  ctx.fillStyle=floor;ctx.fillRect(r.x+1,r.y+1,r.w-2,r.h-4);
  ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(r.x+2,r.y+2,r.w-4,2);
  ctx.fillStyle='rgba(0,0,0,.26)';ctx.fillRect(r.x+2,r.y+r.h-4,r.w-4,3);
- ctx.strokeStyle=rm.isPlayer&&!dead?'rgba(255,213,74,.95)':'rgba(155,140,205,.22)';
- ctx.lineWidth=rm.isPlayer&&!dead?2.4:1.1;ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-4);
+ ctx.strokeStyle=rm.isPlayer&&!dead?'rgba(255,213,74,.95)':'rgba(155,140,205,.5)';
+ ctx.lineWidth=rm.isPlayer&&!dead?2.4:1.4;ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-4);
  // name + zzz
  ctx.textAlign='left';ctx.textBaseline='alphabetic';
  ctx.font='800 10px system-ui';
@@ -651,8 +663,8 @@ function drawRoom(rm){
  }
  // door
  const dp=doorPos(rm.i);
- const cols=['#6b3d1f','#7a4a3a','#5a5f6e','#3f6b8a','#8a6a2f'];
- const cols2=['#8a5028','#9a6248','#7a8092','#5a92b8','#c9a24a'];
+ const cols=['#70401f','#555c66','#747f8d','#2c5c80','#8e6721'];
+ const cols2=['#b17b43','#aeb8c4','#d0d8e0','#4d9bd0','#e2bd54'];
  if(state==='move'||state==='autoenter'){
   ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
   ctx.strokeStyle='rgba(135,233,255,.65)';ctx.lineWidth=2;ctx.strokeRect(dp.x+1,dp.y+1,dp.w-2,dp.h-2);
@@ -662,8 +674,9 @@ function drawRoom(rm){
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(dp.x-2,dp.y+3,dp.w+4,dp.h);
   const dg=ctx.createLinearGradient(dp.x,dp.y,dp.x+dp.w,dp.y);dg.addColorStop(0,'#24162b');dg.addColorStop(.18,cols[rm.door.lv-1]);dg.addColorStop(.54,cols2[rm.door.lv-1]);dg.addColorStop(.84,cols[rm.door.lv-1]);dg.addColorStop(1,'#261829');
   ctx.fillStyle=dg;ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
-  ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(dp.x+3,dp.y+4,2,dp.h-8);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(dp.x+dp.w-4,dp.y+4,2,dp.h-8);
-  if(rm.door.lv>=3){ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(dp.x+2,dp.y+dp.h/2);ctx.lineTo(dp.x+dp.w-2,dp.y+dp.h/2);ctx.stroke()}
+  ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(dp.x+3,dp.y+4,2,dp.h-8);ctx.fillStyle='rgba(0,0,0,.36)';ctx.fillRect(dp.x+dp.w-4,dp.y+4,2,dp.h-8);
+  if(rm.door.lv>=2){ctx.strokeStyle=rm.door.lv===5?'#ffe789':'rgba(238,248,255,.75)';ctx.lineWidth=rm.door.lv>=4?2:1.3;ctx.beginPath();for(let riv=7;riv<dp.h-3;riv+=10){ctx.moveTo(dp.x+5,dp.y+riv);ctx.lineTo(dp.x+dp.w-5,dp.y+riv)}ctx.stroke();ctx.fillStyle='#f3ead4';for(const ry of [dp.y+5,dp.y+dp.h-5]){ctx.beginPath();ctx.arc(dp.x+dp.w/2,ry,1.5,0,6.3);ctx.fill()}}
+  if(rm.door.lv>=3){ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(dp.x+2,dp.y+dp.h/2);ctx.lineTo(dp.x+dp.w-2,dp.y+dp.h/2);ctx.stroke()}
  }else{
   ctx.fillStyle='#1a1024';ctx.fillRect(dp.x,dp.y,dp.w,dp.h);
  }
@@ -701,23 +714,18 @@ function drawRoom(rm){
 function drawGhost(){
  const gh=G.ghost;ctx.save();
  const passDoor=(gh.mode==='enter'&&gh.eStage<2)||(gh.mode==='exit'&&gh.exitStage>=1);
- const bob=Math.sin(gh.ph)*4;
- ctx.translate(gh.x+((G.shake>1)?rnd(-G.shake,G.shake)*.4:0),gh.y+bob);
- const gr=17;
- if(passDoor)ctx.scale(.64,.64);
- const gg=ctx.createRadialGradient(0,-4,2,0,0,gr+10);
- gg.addColorStop(0,gh.fl>0?'#ffffff':'#b08cff');gg.addColorStop(1,'rgba(80,40,160,.15)');
- ctx.fillStyle=gg;
- ctx.beginPath();ctx.arc(0,0,gr,0,6.3);ctx.fill();
- // tail waves
- ctx.beginPath();ctx.moveTo(-gr,4);
- for(let i=0;i<=6;i++){ctx.lineTo(-gr+i*(gr*2/6),gr*.7+Math.sin(gh.ph*1.6+i)*5)}
- ctx.lineTo(gr,4);ctx.closePath();ctx.fill();
- // eyes
- ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-6,-4,4.4,0,6.3);ctx.arc(6,-4,4.4,0,6.3);ctx.fill();
- ctx.fillStyle='#1a0b2e';ctx.beginPath();ctx.arc(-5.4,-4,2.1,0,6.3);ctx.arc(6.6,-4,2.1,0,6.3);ctx.fill();
- // mouth
- ctx.fillStyle='#2a1450';ctx.beginPath();ctx.arc(0,5,4.4,0,3.2);ctx.fill();
+ const bob=Math.sin(gh.ph)*3.2;ctx.translate(gh.x+((G.shake>1)?rnd(-G.shake,G.shake)*.4:0),gh.y+bob);if(passDoor)ctx.scale(.64,.64);
+ // Ragged smoke trails drift behind a tall, floating corpse-like figure.
+ for(let i=0;i<4;i++){const q=gh.ph*1.7+i*1.55,tx=Math.sin(q)*3+(i%2?13:-13),ty=12+i*6+Math.cos(q)*3;ctx.fillStyle='rgba(126,139,155,'+(.08+i*.012)+')';ctx.beginPath();ctx.ellipse(tx,ty,4+i*.55,8+i,Math.sin(q)*.2,0,Math.PI*2);ctx.fill()}
+ ctx.fillStyle='rgba(4,5,10,.52)';ctx.beginPath();ctx.ellipse(1,30,15,4,0,0,Math.PI*2);ctx.fill();
+ const robe=ctx.createLinearGradient(-14,-12,13,25);robe.addColorStop(0,gh.fl>0?'#ede6dc':'#a9aaa5');robe.addColorStop(.45,'#555a60');robe.addColorStop(1,'#161a20');ctx.fillStyle=robe;
+ ctx.beginPath();ctx.moveTo(-7,-10);ctx.quadraticCurveTo(-15,1,-14,18);ctx.lineTo(-19,29);ctx.lineTo(-9,25);ctx.lineTo(-3,31);ctx.lineTo(2,25);ctx.lineTo(10,30);ctx.lineTo(12,22);ctx.lineTo(17,27);ctx.lineTo(13,11);ctx.quadraticCurveTo(12,-3,7,-11);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(220,224,220,.56)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-8,-1);ctx.lineTo(-12,12);ctx.moveTo(7,1);ctx.lineTo(12,13);ctx.moveTo(-1,11);ctx.lineTo(1,23);ctx.stroke();
+ // Long, uneven hair hides most of a chalk-pale face.
+ ctx.fillStyle='#17191e';ctx.beginPath();ctx.ellipse(0,-14,10,12,-.08,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=gh.fl>0?'#fff5e6':'#d2ccc0';ctx.beginPath();ctx.ellipse(0,-13,7,9,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#17191e';ctx.beginPath();ctx.moveTo(-9,-20);ctx.quadraticCurveTo(-1,-29,9,-19);ctx.lineTo(8,-3);ctx.lineTo(4,-12);ctx.lineTo(1,-4);ctx.lineTo(-1,-14);ctx.lineTo(-5,-5);ctx.lineTo(-6,-14);ctx.lineTo(-9,-8);ctx.closePath();ctx.fill();
+ ctx.shadowColor='#ff3948';ctx.shadowBlur=8;ctx.fillStyle='#f45157';ctx.beginPath();ctx.ellipse(-2.7,-13,1.2,1.8,0,0,Math.PI*2);ctx.ellipse(3.2,-13,1.2,1.8,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
  ctx.restore();
 }
 function drawCombatStatus(){
