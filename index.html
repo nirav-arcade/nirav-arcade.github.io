@@ -524,7 +524,7 @@ function buildDynamic(){const a=[],gh=[];if(!G)return{a,gh};
 function bufferMesh(m,dat){gl.bindBuffer(gl.ARRAY_BUFFER,m.b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(dat),gl.DYNAMIC_DRAW);m.n=dat.length/VSTRIDE}
 function renderMesh(m,mvp,eye,opacity=1,useTex=1){if(!m||!m.n)return;gl.bindBuffer(gl.ARRAY_BUFFER,m.b);const p=glProgram;gl.useProgram(p);const stride=VSTRIDE*4;let at=0;for(const [name,size] of [['aPos',3],['aNormal',3],['aUV',2],['aColor',3]]){const loc=gl.getAttribLocation(p,name);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,stride,at);at+=size*4}gl.uniformMatrix4fv(gl.getUniformLocation(p,'uMVP'),false,mvp);gl.uniform3fv(gl.getUniformLocation(p,'uEye'),eye);const poses=[],cols=[];for(let i=0;i<6;i++){const rz=-10+i*4;poses.push(0,2.5,rz);cols.push(.86,.60,.30)}poses.push(eye[0],2.2,eye[2]);cols.push(.46,.35,.82);gl.uniform3fv(gl.getUniformLocation(p,'uLightPos[0]'),new Float32Array(poses));gl.uniform3fv(gl.getUniformLocation(p,'uLightCol[0]'),new Float32Array(cols));gl.uniform1f(gl.getUniformLocation(p,'uOpacity'),opacity);gl.uniform1f(gl.getUniformLocation(p,'uUseTex'),useTex);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,glTex);gl.uniform1i(gl.getUniformLocation(p,'uTex'),0);gl.drawArrays(gl.TRIANGLES,0,m.n)}
 function render3DWorld(){if(!glReady||!G)return;const dpr=Math.min(devicePixelRatio||1,0.62);const w=Math.round(innerWidth*dpr),h=Math.round(innerHeight*dpr);if(worldCanvas.width!==w||worldCanvas.height!==h){worldCanvas.width=w;worldCanvas.height=h;gl.viewport(0,0,w,h)}
- const t=performance.now();if(glLastStat){const gap=t-glLastStat;glFrameTimes.push(gap);if(glFrameTimes.length>90)glFrameTimes.shift();if(gap>33)renderStats.slowFrames++;renderStats.maxFrameMs=Math.max(renderStats.maxFrameMs,gap);if(t-renderStats._start>1000){renderStats.fps=Math.round(1000*glFrameTimes.length/glFrameTimes.reduce((a,b)=>a+b,0));renderStats._start=t;renderStats.slowFramesRecent=renderStats.slowFrames;renderStats.slowFrames=0;renderStats.maxFrameMsRecent=Math.round(renderStats.maxFrameMs);renderStats.maxFrameMs=0}}else renderStats._start=t;glLastStat=t;
+ const t=performance.now();if(glLastStat){const gap=t-glLastStat;glFrameTimes.push(gap);if(glFrameTimes.length>90)glFrameTimes.shift();if(gap>33)renderStats.slowFrames++;renderStats.maxFrameMs=Math.max(renderStats.maxFrameMs,gap);if(t-renderStats._start>1000){renderStats.fps=Math.round(1000*glFrameTimes.length/glFrameTimes.reduce((a,b)=>a+b,0));renderStats._start=t;renderStats.slowFramesRecent=renderStats.slowFrames;renderStats.slowFrames=0;renderStats.maxFrameMsRecent=Math.round(renderStats.maxFrameMs);renderStats.maxFrameMs=0;if(t-renderStats._start>1500&&renderStats.fps<24){glReady=false;renderStats.webgl=false;renderStats.fallback='canvas';worldCanvas.style.display='none';console.info('Using the faster canvas renderer on this device');return}}}else renderStats._start=t;glLastStat=t;
  gl.enable(gl.DEPTH_TEST);gl.clearColor(.035,.035,.065,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);const eye=[0,22,22],target=[0,0,0],aspect=w/h,view=matLook(eye,target),model=matScale(.52,1,1.25),mvp=mult4(matPerspective(40*Math.PI/180,aspect,.1,100),mult4(view,model));if(glStatic)renderMesh(glStatic,mvp,eye,1,1);const dyn=buildDynamic();if(!glActors)glActors=mesh([],true);bufferMesh(glActors,dyn.a);renderMesh(glActors,mvp,eye,1,1);if(dyn.gh.length){if(!glGhost)glGhost=mesh([],true);bufferMesh(glGhost,dyn.gh);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);renderMesh(glGhost,mvp,eye,.88,0);gl.depthMask(true);gl.disable(gl.BLEND)}
 }
 let glActors=null,glGhost=null;
@@ -690,6 +690,17 @@ function drawParts(){
   ctx.globalAlpha=Math.max(0,Math.min(1,t.t));
   ctx.fillStyle=t.c;ctx.font='800 13px system-ui';ctx.textAlign='center';
   ctx.fillText(t.s,t.x,t.y);ctx.globalAlpha=1;
+ }
+}
+function drawAIRunners(){
+ if(!G||!G.aiRunners)return;
+ for(const a of G.aiRunners){if(a.done)continue;const x=a.x,y=a.y+Math.sin(a.walk)*1.4,phase=Math.sin(a.walk),col=a.color.map(v=>Math.round(v*255));
+  ctx.save();ctx.fillStyle='rgba(0,0,0,.42)';ctx.beginPath();ctx.ellipse(x+2,y+7,7,2.7,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(25,18,34,.95)';ctx.lineWidth=2.2;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x-2,y+3);ctx.lineTo(x-3+phase*2,y+8);ctx.moveTo(x+2,y+3);ctx.lineTo(x+3-phase*2,y+8);ctx.stroke();
+  const shirt='rgb('+col.join(',')+')';const g=ctx.createLinearGradient(x-5,y-7,x+5,y+6);g.addColorStop(0,'rgba(255,255,255,.5)');g.addColorStop(.35,shirt);g.addColorStop(1,'rgba(12,14,22,.85)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,5.5,7.5,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=shirt;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-4,y-3);ctx.lineTo(x-7-phase*2,y+1);ctx.moveTo(x+4,y-3);ctx.lineTo(x+7+phase*2,y+1);ctx.stroke();
+  ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(x,y-8,4.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.82)';ctx.font='700 7px system-ui';ctx.textAlign='center';ctx.fillText(a.name,x,y-15);ctx.restore();
  }
 }
 function drawRunner(){
@@ -873,7 +884,7 @@ function frame(now){
  ctx.clearRect(0,0,W,H);
  if(glReady&&G&&(state==='move'||state==='autoenter'||state==='settle'||state==='play'||state==='win'||state==='lose'))render3DWorld();
  if(state==='title')drawTitle();
- else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){drawMap();drawRunner()}drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
+ else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){drawMap();drawAIRunners();drawRunner()}drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
  else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
