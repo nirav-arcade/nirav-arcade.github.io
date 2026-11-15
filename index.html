@@ -927,7 +927,7 @@ function frame(now){
  if(glReady&&G&&(state==='move'||state==='autoenter'||state==='settle'||state==='play'||state==='win'||state==='lose'))render3DWorld();
  if(state==='title')drawTitle();
  else if(state==='move'||state==='autoenter'||state==='settle'){if(!glReady){drawMap();drawAIRunners();drawRunner()}drawParts();drawHUD();drawJoystick();if(state==='move'){ctx.fillStyle='rgba(0,0,0,.72)';rr(W/2-92,H-138,184,22,10);ctx.fill();ctx.fillStyle='#e6f6ff';ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('CHOOSE A DOOR · WALK INSIDE',W/2,H-127)}}
- else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawShopButton();drawSheet();
+ else if(state==='play'){if(!glReady){drawMap();drawGhost()}drawParts();drawHUD();drawCombatStatus();drawShopButton();drawSheet();
   if(banner){ctx.fillStyle=banner.c;ctx.font='800 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(banner.s,W/2,HUD+18);ctx.fillText(banner.s,W/2,HUD+18)}}
  else drawEnd();
