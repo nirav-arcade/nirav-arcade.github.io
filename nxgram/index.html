@@ -3681,7 +3681,7 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <div class="profile-pic-container">
 
-<img id="profileMainAvatar" src="" alt="Profile Picture">
+<img id="profileMainAvatar" src="" alt="Profile Picture" onclick="openEditProfileModal()" style="cursor:pointer;">
 
 </div>
 
@@ -3920,6 +3920,16 @@ EDIT PROFILE MODAL
 </div>
 
 <div class="create-body">
+
+<label for="profileAvatarFile" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer;">
+
+<img id="editProfileAvatarPreview" src="" alt="Current profile photo" style="width:48px; height:48px; border-radius:50%; object-fit:cover;">
+
+<span style="font-size:14px; font-weight:600; color:var(--accent-blue);">Change profile photo</span>
+
+<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="handleProfileAvatarUpload(event)">
+
+</label>
 
 <div>
 
@@ -5029,7 +5039,7 @@ feedContainer.innerHTML = appState.posts.map(post => `
 
 <div class="post-avatar-ring" onclick="openStoryViewer(1)">
 
-<img src="${post.userAvatar}" alt="${post.username}">
+<img src="${post.username === appState.currentUser.username ? appState.currentUser.avatar : post.userAvatar}" alt="${post.username}">
 
 </div>
 
@@ -5437,7 +5447,7 @@ container.innerHTML = appState.reels.map(reel => `
 
 <div class="reel-user-row">
 
-<img src="${reel.avatar}" alt="${reel.username}">
+<img src="${reel.username === appState.currentUser.username ? appState.currentUser.avatar : reel.avatar}" alt="${reel.username}">
 
 <span style="font-weight:600; font-size:14px;">${reel.username}</span>
 
@@ -5495,7 +5505,7 @@ container.innerHTML = appState.reels.map(reel => `
 
 <div class="reel-disc">
 
-<img src="${reel.avatar}" style="width:100%; height:100%; object-fit:cover;" alt="Audio">
+<img src="${reel.username === appState.currentUser.username ? appState.currentUser.avatar : reel.avatar}" style="width:100%; height:100%; object-fit:cover;" alt="Audio">
 
 </div>
 
@@ -5725,6 +5735,10 @@ document.getElementById("sidebarUserAvatar").src = pic;
 
 document.getElementById("mobileNavAvatar").src = pic;
 
+document.getElementById("railCurrentUserImg").src = pic;
+
+document.getElementById("profileMainAvatar").src = pic;
+
 }
 
 function renderProfile() {
@@ -5823,6 +5837,10 @@ function openEditProfileModal() {
 
 const u = appState.currentUser;
 
+document.getElementById("editProfileAvatarPreview").src = u.avatar;
+
+document.getElementById("profileAvatarFile").value = "";
+
 document.getElementById("editNameInput").value = u.fullName;
 
 document.getElementById("editUsernameInput").value = u.username;
@@ -5832,6 +5850,98 @@ document.getElementById("editBioInput").value = u.bio;
 document.getElementById("editWebsiteInput").value = u.website;
 
 document.getElementById("editProfileModal").classList.add("open");
+
+}
+
+function handleProfileAvatarUpload(event) {
+
+const file = event.target.files && event.target.files[0];
+
+if (!file) return;
+
+if (!file.type.startsWith("image/")) {
+
+showToast("Choose an image file.");
+
+event.target.value = "";
+
+return;
+
+}
+
+const reader = new FileReader();
+
+reader.onerror = () => showToast("Could not read that photo. Try another image.");
+
+reader.onload = function(e) {
+
+const source = new Image();
+
+source.onerror = () => showToast("Could not open that photo. Try another image.");
+
+source.onload = function() {
+
+const maxSide = 320;
+
+const scale = Math.min(1, maxSide / Math.max(source.naturalWidth, source.naturalHeight));
+
+const width = Math.max(1, Math.round(source.naturalWidth * scale));
+
+const height = Math.max(1, Math.round(source.naturalHeight * scale));
+
+const canvas = document.createElement("canvas");
+
+canvas.width = width;
+
+canvas.height = height;
+
+const context = canvas.getContext("2d");
+
+context.fillStyle = "#ffffff";
+
+context.fillRect(0, 0, width, height);
+
+context.drawImage(source, 0, 0, width, height);
+
+const previousAvatar = appState.currentUser.avatar;
+
+try {
+
+appState.currentUser.avatar = canvas.toDataURL("image/jpeg", 0.8);
+
+localStorage.setItem("insta_clone_state_v1", JSON.stringify(appState));
+
+} catch (error) {
+
+appState.currentUser.avatar = previousAvatar;
+
+showToast("That photo could not be saved. Try a smaller image.");
+
+return;
+
+}
+
+syncUserAvatars();
+
+document.getElementById("editProfileAvatarPreview").src = appState.currentUser.avatar;
+
+renderStories();
+
+renderFeed();
+
+renderSuggestions();
+
+renderProfile();
+
+showToast("Profile photo updated!");
+
+};
+
+source.src = e.target.result;
+
+};
+
+reader.readAsDataURL(file);
 
 }
 
@@ -6043,7 +6153,7 @@ modalContent.innerHTML = `
 
 <div class="post-user-info">
 
-<img src="${post.userAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
+<img src="${post.username === appState.currentUser.username ? appState.currentUser.avatar : post.userAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
 
 <span style="font-weight:600; font-size:14px;">${post.username}</span>
 
