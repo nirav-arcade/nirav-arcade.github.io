@@ -4519,6 +4519,10 @@ POSTS
 
 </button>
 
+<button class="profile-tab-btn" id="tabReelsBtn" onclick="switchProfileTab('reels')" aria-label="Reels">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"></rect><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+REELS
+</button>
 <button class="profile-tab-btn" id="tabSavedBtn" onclick="switchProfileTab('saved')">
 
 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4529,6 +4533,10 @@ POSTS
 
 SAVED
 
+</button>
+<button class="profile-tab-btn" id="tabTaggedBtn" onclick="switchProfileTab('tagged')" aria-label="Tagged">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><circle cx="12" cy="8" r="4"></circle></svg>
+TAGGED
 </button>
 
 </div>
@@ -6956,10 +6964,8 @@ document.getElementById("profileHighlightsRow").innerHTML = appState.highlights.
 const allPosts = [...appState.posts, ...appState.exploreExtras];
 
 const gridItems = currentProfileTab === "posts"
-
 ? myPosts
-
-: allPosts.filter(p => p.saved);
+: currentProfileTab === "saved" ? allPosts.filter(p => p.saved) : [];
 
 const grid = document.getElementById("profileGridContainer");
 
@@ -6996,6 +7002,8 @@ currentProfileTab = tab;
 document.getElementById("tabPostsBtn").classList.toggle("active", tab === "posts");
 
 document.getElementById("tabSavedBtn").classList.toggle("active", tab === "saved");
+document.getElementById("tabReelsBtn").classList.toggle("active", tab === "reels");
+document.getElementById("tabTaggedBtn").classList.toggle("active", tab === "tagged");
 
 renderProfile();
 
@@ -7615,6 +7623,26 @@ body.dark-mode #nxAuth .box{background:#121212;border-color:#262626}
 #nxAuth .sw{margin-top:18px;font-size:14px}#nxAuth .sw a{color:#0095f6;font-weight:600;cursor:pointer}
 #nxAuth .err{color:#ed4956;font-size:13px;min-height:18px;margin-top:8px}
 #nxMembersBtn{position:fixed;top:8px;right:8px;z-index:9000;background:#0095f6;color:#fff;border:0;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;display:none;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+@media (max-width: 767px) {
+#view-profile .profile-header-section{grid-template-columns:92px minmax(0,1fr);grid-template-areas:none;column-gap:18px;row-gap:6px;align-items:center;padding:6px 14px 0;margin-bottom:14px}
+#view-profile .profile-top-row{grid-area:auto;grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between}
+#view-profile .profile-handle{font-size:21px;font-weight:700}
+#view-profile .profile-pic-container{grid-area:auto;grid-column:1;grid-row:2/4;width:92px;height:92px;position:relative}
+#view-profile .profile-pic-container img{width:92px;height:92px}
+#view-profile .profile-bio-block{display:contents}
+#view-profile .profile-bio-name{grid-column:2;grid-row:2;align-self:end;font-size:17px;font-weight:700;margin:0}
+#view-profile .profile-stats-row{grid-area:auto;grid-column:2;grid-row:3;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:6px;align-self:start}
+#view-profile .profile-stats-row span{display:flex;flex-direction:column;align-items:center;font-size:13px;line-height:1.25;color:var(--text-primary)}
+#view-profile .profile-stats-row strong{font-size:21px;font-weight:800}
+#view-profile #profileBioText{grid-column:1/-1;grid-row:4;font-size:14px;line-height:1.4;margin:6px 0 0}
+#view-profile #profileWebsiteLink{grid-column:1/-1;grid-row:5;font-size:14px;font-weight:600}
+#view-profile #profileSocialLinks{grid-column:1/-1;grid-row:6}
+#view-profile .profile-actions-row{grid-area:auto;grid-column:1/-1;grid-row:7;display:flex;gap:8px;margin-top:8px}
+#view-profile .profile-actions-row .btn-secondary{flex:1;height:36px;border-radius:8px;font-size:14px;font-weight:600;padding:0}
+#view-profile .profile-tabs{justify-content:space-around;gap:0;border-top:1px solid var(--border-subtle)}
+#view-profile .profile-tab-btn{flex:1;justify-content:center;font-size:0;letter-spacing:0;gap:0;padding:12px 0}
+#view-profile .profile-tab-btn svg{width:24px;height:24px}
+}
 @media (max-width:900px){#nxMembersBtn{top:auto;bottom:64px;right:10px}}
 #nxMembers{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
 #nxMembers .box{background:#fff;color:#262626;border-radius:12px;width:100%;max-width:400px;max-height:80vh;overflow:auto;padding:18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
