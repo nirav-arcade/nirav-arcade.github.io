@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "InstaClone",
-  "short_name": "InstaClone",
+  "name": "NXgram",
+  "short_name": "NXgram",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
