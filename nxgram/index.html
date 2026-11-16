@@ -3262,7 +3262,7 @@ transform: translateX(-50%) translateY(0);
 
 body.nx-booting #authScreen{display:none !important;}
 body.nx-booting{background:#fff;}
-body.nx-booting::after{content:"NXgram";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Billabong","Segoe Script","Brush Script MT",cursive;font-size:48px;color:#7b2ff7;z-index:300000;background:#fff;}
+body.nx-booting::after{content:"";position:fixed;inset:0;z-index:300000;background:#fff url(./icon-192.png) center/84px 84px no-repeat;}
 body.auth-locked > :not(#authScreen):not(script) {
 
 display: none !important;
@@ -7630,6 +7630,8 @@ import {getFirestore,getDocs,where,deleteDoc,collection,doc,getDoc,setDoc,addDoc
 const app=initializeApp({apiKey:"AIzaSyDcQsaVRFev93JwZVcLcsJ06-ScvLLYh6U",authDomain:"nxgram-8f0f9.firebaseapp.com",projectId:"nxgram-8f0f9",storageBucket:"nxgram-8f0f9.firebasestorage.app",messagingSenderId:"26909901394",appId:"1:26909901394:web:e42238d72b55420168958b"});
 const auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
+let legacyAvatar=null;try{const ls=JSON.parse(localStorage.getItem("insta_clone_state_v1")||"null");const av=ls&&ls.currentUser&&ls.currentUser.avatar;if(typeof av==="string"&&av.startsWith("data:image/jpeg")&&av.length<200000)legacyAvatar=av;}catch(e){}
+const _si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==="insta_clone_state_v1"){try{const o=JSON.parse(v);o.posts=[];o.exploreExtras=[];v=JSON.stringify(o);}catch(e){}}return _si.call(this,k,v);};
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const COLORS=["#f56040","#c13584","#5851db","#0095f6","#2ecc71","#e67e22","#8e44ad"];
 function avatarFor(name){const c=COLORS[(name.charCodeAt(0)+name.length)%COLORS.length];return "data:image/svg+xml;utf8,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='${c}'/><text x='100' y='130' font-size='100' font-family='Arial' font-weight='bold' fill='#fff' text-anchor='middle'>${esc(name[0]||"?").toUpperCase()}</text></svg>`);}
@@ -7661,10 +7663,17 @@ window.__nxSubmit=async function(){
  btn.disabled=false;
 };
 async function boot(user){
- const snap=await getDoc(doc(db,"users",user.uid));
- const d=snap.exists()?snap.data():{username:(user.email||"user").split("@")[0],fullName:""};
+ const ck="nx_profile_"+user.uid;let cached=null;try{cached=JSON.parse(localStorage.getItem(ck)||"null");}catch(e){}
+ const docP=getDoc(doc(db,"users",user.uid));
+ let d=cached;
+ if(!d){const snap=await docP;d=snap.exists()?snap.data():{username:(user.email||"user").split("@")[0],fullName:""};if(d.createdAt)d.createdAt=null;}
  me={uid:user.uid,...d};
- appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:avatarFor(me.username),bio:me.bio||"",website:"",followers:0,following:0,connectedProfiles:{}};
+ const applyMe=()=>{appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:me.avatar||avatarFor(me.username),bio:me.bio||"",website:me.website||"",followers:0,following:0,connectedProfiles:(appState.currentUser&&appState.currentUser.connectedProfiles)||{}};};
+ applyMe();
+ const saveCache=()=>{try{localStorage.setItem(ck,JSON.stringify({username:me.username,fullName:me.fullName,bio:me.bio,website:me.website,avatar:me.avatar}));}catch(e){}};
+ docP.then(async snap=>{if(!snap.exists())return;const x=snap.data();me={...me,username:x.username||me.username,fullName:x.fullName,bio:x.bio,website:x.website,avatar:x.avatar};
+  if(!me.avatar&&legacyAvatar){me.avatar=legacyAvatar;try{await updateDoc(doc(db,"users",user.uid),{avatar:legacyAvatar});}catch(e){}}
+  saveCache();applyMe();try{syncUserAvatars();renderStories();renderFeed();renderSuggestions();if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}}).catch(()=>{});
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
@@ -7678,14 +7687,14 @@ async function boot(user){
  else{$("nxMembersBtn").textContent="⚙ Account";$("nxMTitle").textContent="Account";$("nxMList").innerHTML="";}
 }
 function rebuild(){
- appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:avatarFor(p.username),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
+ appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:(typeof p.userAvatar==="string"&&p.userAvatar.startsWith("data:image/jpeg")?p.userAvatar:avatarFor(p.username)),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
  try{syncUserAvatars();renderStories();renderFeed();renderSuggestions();}catch(e){console.warn(e);}
  try{if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}
 }
 function renderMembers(list){
  list.sort((a,b)=>(a.createdAt?.toMillis?.()||0)-(b.createdAt?.toMillis?.()||0));
  $("nxMTitle").textContent="Members ("+list.length+")";$("nxMembersBtn").textContent="👥 Members ("+list.length+")";
- $("nxMList").innerHTML=list.map(u=>`<div class="row"><img src="${avatarFor(u.username||"?")}" width="36" height="36" style="border-radius:50%"><div><b>@${esc(u.username)}</b><br><span style="color:#8e8e8e">${esc(u.fullName||"")}</span></div><small>${u.createdAt?new Date(u.createdAt.toMillis()).toLocaleDateString():""}</small></div>`).join("");
+ $("nxMList").innerHTML=list.map(u=>`<div class="row"><img src="${(typeof u.avatar==="string"&&u.avatar.startsWith("data:image/jpeg"))?u.avatar:avatarFor(u.username||"?")}" width="36" style="object-fit:cover;border-radius:50%" height="36"><div><b>@${esc(u.username)}</b><br><span style="color:#8e8e8e">${esc(u.fullName||"")}</span></div><small>${u.createdAt?new Date(u.createdAt.toMillis()).toLocaleDateString():""}</small></div>`).join("");
 }
 $("nxMembersBtn").onclick=()=>{$("nxMembers").style.display="flex";};
 $("nxMClose").onclick=()=>{$("nxMembers").style.display="none";};
@@ -7713,14 +7722,21 @@ window.publishNewPost=async function(){
  if(!selectedNewPostImg)return showToast("Select a photo first.");
  const caption=document.getElementById("newPostCaption").value.trim()||"New post ✨";const location=document.getElementById("newPostLocation").value.trim();
  const image=await shrink(selectedNewPostImg);if(!image){showToast("Image problem, pick another");return;}
- try{await addDoc(collection(db,"posts"),{uid:me.uid,username:me.username,image,caption:caption.slice(0,2000),location:location.slice(0,80),likedBy:[],commentCount:0,createdAt:serverTimestamp()});}
+ try{await addDoc(collection(db,"posts"),{uid:me.uid,username:me.username,image,userAvatar:(appState.currentUser.avatar||"").startsWith("data:image/jpeg")?appState.currentUser.avatar:"",caption:caption.slice(0,2000),location:location.slice(0,80),likedBy:[],commentCount:0,createdAt:serverTimestamp()});}
  catch(e){showToast("Couldn't post, image may be too big");return;}
  closeCreateModal();switchView("home");showToast("Your post has been shared!");};
 window.saveProfileEdits=async function(){
- const n=document.getElementById("editNameInput").value.trim(),b=document.getElementById("editBioInput").value.trim();
- if(n)appState.currentUser.fullName=n;appState.currentUser.bio=b;
- try{await updateDoc(doc(db,"users",me.uid),{fullName:appState.currentUser.fullName,bio:b});}catch(e){}
+ const n=document.getElementById("editNameInput").value.trim(),b=document.getElementById("editBioInput").value.trim(),w=document.getElementById("editWebsiteInput").value.trim();
+ if(n)appState.currentUser.fullName=n;appState.currentUser.bio=b;appState.currentUser.website=w;
+ me.fullName=appState.currentUser.fullName;me.bio=b;me.website=w;
+ try{await updateDoc(doc(db,"users",me.uid),{fullName:me.fullName,bio:b,website:w});localStorage.setItem("nx_profile_"+me.uid,JSON.stringify({username:me.username,fullName:me.fullName,bio:b,website:w,avatar:me.avatar}));}catch(e){showToast("Couldn't save profile online");}
  closeEditProfileModal();renderProfile();showToast("Profile updated!");};
+const _sync=window.syncUserAvatars;
+window.syncUserAvatars=function(){_sync();persistAvatar();};
+async function persistAvatar(){const av=appState.currentUser&&appState.currentUser.avatar;
+ if(!me||!av||av===me.avatar||!av.startsWith("data:image/jpeg")||av.length>300000)return;
+ me.avatar=av;try{await updateDoc(doc(db,"users",me.uid),{avatar:av});localStorage.setItem("nx_profile_"+me.uid,JSON.stringify({username:me.username,fullName:me.fullName,bio:me.bio,website:me.website,avatar:av}));}catch(e){showToast("Couldn't save photo online");}}
+
 </script>
 
 </body>

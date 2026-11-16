@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.nirav_arcade.nxgram.twa",
+        "sha256_cert_fingerprints": ["8C:E0:2E:9F:28:0D:C9:E9:54:98:9E:66:42:72:F6:C6:CD:E3:B6:71:67:49:23:CA:05:CF:5C:0E:78:13:25:76"]
+      }
+    }]
