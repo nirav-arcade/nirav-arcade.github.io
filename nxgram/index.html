@@ -7795,7 +7795,7 @@ window.openUserProfile=async function(username){
  const counts=card.querySelector(".user-profile-counts");if(!counts)return;
  const spans=counts.querySelectorAll("span");
  const wrap=document.createElement("div");wrap.className="nxBtnRow";counts.after(wrap);
- [["follows",spans[1],"Follow","Following"],["subs",spans[2],"Subscribe","Subscribed"]].forEach(([col,sp,off,onT])=>{
+ [["follows",spans[1],"Follow","Followed"],["subs",spans[2],"Subscribe","Subscribed"]].forEach(([col,sp,off,onT])=>{
   sp.classList.add("nxClickable");sp.onclick=()=>showFollowList(uid,col);
   const lab=col==="subs"?"subscribers":"followers";
   profUnsubs.push(onSnapshot(query(collection(db,col),where("followee","==",uid)),qs=>{sp.innerHTML="<strong>"+qs.size.toLocaleString()+"</strong> "+lab;}));
