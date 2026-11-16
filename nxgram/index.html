@@ -7808,7 +7808,7 @@ window.openUserProfile=async function(username){
 
 // ---- verified (blue tick), admin-controlled ----
 const vSet=new Set();
-window.isVerifiedUser=function(username){const n=String(username||"").trim().toLowerCase();if(!n)return false;return REPO_VERIFIED_USERS.some(x=>x.toLowerCase()===n)||vSet.has(n);};
+window.isVerifiedUser=function(username){const n=String(username||"").trim().toLowerCase();if(!n)return false;return vSet.has(n);};
 let vUnsub=null;
 function startVerifiedListener(){if(vUnsub)vUnsub();vUnsub=onSnapshot(collection(db,"verified"),qs=>{vSet.clear();qs.docs.forEach(d=>vSet.add(d.id));try{rebuild();}catch(e){}try{if(window.__nxMembersList)renderMembers(window.__nxMembersList);}catch(e){}});}
 window.__nxStartVerified=startVerifiedListener;
