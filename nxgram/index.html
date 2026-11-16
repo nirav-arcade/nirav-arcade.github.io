@@ -1997,6 +1997,8 @@ margin-bottom: 3px;
 
 }
 
+.chat-thread-handle { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }
+
 .chat-thread-preview {
 
 font-size: 13px;
@@ -2641,6 +2643,230 @@ font-size: 14px;
 
 }
 
+/* Full-screen Instagram-style post picker */
+#createPostModal {
+  padding: 0;
+  background: #0b0d10;
+  z-index: 1300;
+}
+#createPostModal .create-modal-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: #0b0d10;
+  color: #f7f7f8;
+  box-shadow: none;
+}
+#createPostModal .modal-top-bar {
+  flex: 0 0 62px;
+  min-height: 62px;
+  padding: 0 18px;
+  border-bottom: 1px solid #22252a;
+  font-size: 17px;
+  color: #f7f7f8;
+}
+#createPostModal .create-close-button {
+  width: 34px;
+  padding: 0;
+  text-align: left;
+  color: #f7f7f8;
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+}
+#createPostModal .create-next-button {
+  min-width: 42px;
+  padding: 8px 0 8px 8px;
+  color: #f7f7f8;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 700;
+}
+#createPostModal .create-next-button:disabled {
+  color: #737880;
+  cursor: default;
+}
+#createPickerStage, #createDetailsStage {
+  flex: 1;
+  min-height: 0;
+}
+#createPickerStage {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#createPostModal [hidden] { display: none !important; }
+.create-preview-area {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0b0d10;
+}
+.create-preview-photo {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.create-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: #a4a8af;
+  text-align: center;
+}
+.create-preview-placeholder svg { color: #d2d4d8; }
+.create-preview-placeholder strong { color: #f3f4f6; font-size: 16px; }
+.create-preview-placeholder span { font-size: 13px; }
+.create-picker-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.create-recents-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  color: #f7f7f8;
+  font-size: 17px;
+  font-weight: 700;
+}
+.create-select-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 17px;
+  border-radius: 24px;
+  background: #34383e;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+.create-select-button:active { background: #474c54; }
+.create-file-input { display: none; }
+.create-preset-section {
+  flex: 0 0 auto;
+  padding: 9px 16px 11px;
+  border-top: 1px solid #1d2025;
+  background: #0e1014;
+}
+.create-preset-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  color: #bfc3ca;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+}
+.create-preset-toggle svg { transition: transform .18s ease; }
+.create-preset-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+#createPostModal .preset-thumbs {
+  display: none;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 8px 0 3px;
+}
+#createPostModal .preset-thumbs.open { display: flex; }
+#createPostModal .preset-thumb {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  object-fit: cover;
+}
+#createPostModal .preset-thumb.selected { border-color: #0095f6; }
+.create-bottom-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #202328;
+  background: #0b0d10;
+}
+.create-bottom-tab {
+  min-width: 132px;
+  padding: 8px 20px;
+  border-radius: 24px;
+  color: #858991;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.create-bottom-tab.active {
+  background: #24272d;
+  color: #f7f7f8;
+}
+#createDetailsStage {
+  overflow-y: auto;
+  padding: 16px;
+  background: #0b0d10;
+}
+.create-details-back {
+  margin-bottom: 14px;
+  padding: 6px 0;
+  color: #c7cbd2;
+  font-size: 13px;
+}
+.create-details-preview {
+  width: 100%;
+  max-height: 34vh;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  background: #16191e;
+  object-fit: contain;
+}
+.create-details-label {
+  display: block;
+  margin: 14px 0 7px;
+  color: #d9dce1;
+  font-size: 13px;
+  font-weight: 600;
+}
+#createPostModal .create-textarea,
+#createPostModal .create-input {
+  width: 100%;
+  border: 1px solid #33373f;
+  border-radius: 10px;
+  background: #171a20;
+  color: #f7f7f8;
+}
+#createPostModal .create-textarea { min-height: 130px; resize: vertical; }
+#createPostModal .create-input { min-height: 44px; }
+#createPostModal .create-textarea::placeholder,
+#createPostModal .create-input::placeholder { color: #969ba4; }
+@media (max-height: 680px) {
+  #createPostModal .modal-top-bar { flex-basis: 54px; min-height: 54px; }
+  .create-preview-area { min-height: 180px; }
+  .create-preset-section { padding-top: 5px; padding-bottom: 6px; }
+  .create-bottom-tabs { padding-top: 6px; padding-bottom: calc(7px + env(safe-area-inset-bottom)); }
+}
+
+
 /* Fullscreen Story Viewer */
 
 .story-viewer-overlay {
@@ -3031,15 +3257,352 @@ transform: translateX(-50%) translateY(0);
 
 }
 
+
+/* First-run local sign-in */
+
+body.auth-locked > :not(#authScreen):not(script) {
+
+display: none !important;
+
+}
+
+#authScreen {
+
+display: none;
+
+}
+
+body.auth-locked #authScreen {
+
+position: fixed;
+
+inset: 0;
+
+z-index: 2000;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+overflow-y: auto;
+
+padding: 24px 16px;
+
+background: linear-gradient(145deg, #fff8f5 0%, #fff 48%, #f4edff 100%);
+
+}
+
+.auth-card {
+
+width: min(100%, 390px);
+
+padding: 28px 24px 22px;
+
+border: 1px solid rgba(123, 47, 247, 0.12);
+
+border-radius: 20px;
+
+background: #ffffff;
+
+box-shadow: 0 18px 55px rgba(55, 24, 88, 0.14);
+
+}
+
+.auth-brand {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+text-align: center;
+
+margin-bottom: 22px;
+
+}
+
+.auth-brand img {
+
+width: 68px;
+
+height: 68px;
+
+border-radius: 17px;
+
+margin-bottom: 10px;
+
+}
+
+.auth-brand-name {
+
+font-family: 'Grand Hotel', cursive;
+
+font-size: 34px;
+
+line-height: 1;
+
+}
+
+.auth-brand-caption {
+
+margin-top: 8px;
+
+font-size: 14px;
+
+color: var(--text-secondary);
+
+}
+
+.auth-mode-switch {
+
+display: grid;
+
+grid-template-columns: 1fr 1fr;
+
+gap: 4px;
+
+padding: 4px;
+
+margin-bottom: 20px;
+
+border-radius: 10px;
+
+background: #f3f1f5;
+
+}
+
+.auth-mode-button {
+
+padding: 10px;
+
+border-radius: 8px;
+
+color: #737373;
+
+font-size: 14px;
+
+font-weight: 600;
+
+}
+
+.auth-mode-button.active {
+
+background: #ffffff;
+
+color: #17121d;
+
+box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+
+}
+
+.auth-form {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 12px;
+
+}
+
+.auth-label {
+
+display: block;
+
+margin-bottom: 6px;
+
+font-size: 12px;
+
+font-weight: 600;
+
+color: #56515c;
+
+}
+
+.auth-input {
+
+width: 100%;
+
+padding: 12px 13px;
+
+border: 1px solid #dedbe3;
+
+border-radius: 10px;
+
+background: #fbfafc;
+
+color: #16131a;
+
+font-size: 15px;
+
+}
+
+.auth-input:focus {
+
+outline: 2px solid rgba(123, 47, 247, 0.18);
+
+border-color: #7b2ff7;
+
+}
+
+.auth-submit {
+
+width: 100%;
+
+margin-top: 5px;
+
+padding: 12px 16px;
+
+border-radius: 10px;
+
+background: linear-gradient(95deg, #ff692d, #ff2e69 50%, #7b2ff7);
+
+color: #ffffff;
+
+font-size: 15px;
+
+font-weight: 700;
+
+}
+
+.auth-message {
+
+min-height: 20px;
+
+margin-top: 12px;
+
+text-align: center;
+
+font-size: 13px;
+
+line-height: 1.4;
+
+color: #b42318;
+
+}
+
+.auth-local-note {
+
+margin-top: 12px;
+
+text-align: center;
+
+font-size: 11px;
+
+line-height: 1.45;
+
+color: #85808a;
+
+}
+
+@media (max-width: 767px) {
+
+#authScreen {
+
+padding: 18px 16px;
+
+}
+
+.auth-card {
+
+padding: 25px 21px 19px;
+
+}
+
+}
+
 /*
 
 ==========================================================================
+
+
+
 
 7. RESPONSIVE BREAKPOINTS (TABLET & MOBILE)
 
 ==========================================================================
 
 */
+
+/* Local verified profile cards */
+.user-profile-modal {
+position: fixed;
+inset: 0;
+z-index: 1100;
+display: none;
+align-items: center;
+justify-content: center;
+padding: 18px;
+background: rgba(0, 0, 0, 0.58);
+}
+.user-profile-modal.open { display: flex; }
+.user-profile-card {
+width: min(100%, 390px);
+padding: 24px 20px 20px;
+border-radius: 16px;
+background: var(--bg-elevated);
+box-shadow: var(--shadow-lg);
+text-align: center;
+}
+.user-profile-card img {
+width: 88px;
+height: 88px;
+margin: 2px auto 14px;
+border-radius: 50%;
+object-fit: cover;
+}
+.user-profile-handle {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 3px;
+font-size: 19px;
+font-weight: 700;
+}
+.user-profile-fullname {
+margin-top: 5px;
+color: var(--text-secondary);
+font-size: 14px;
+}
+.user-profile-count {
+margin: 16px 0;
+color: var(--text-secondary);
+font-size: 13px;
+}
+.user-profile-admin-action {
+width: 100%;
+margin-top: 4px;
+padding: 10px 12px;
+border-radius: 9px;
+background: var(--accent-blue);
+color: white;
+font-weight: 700;
+}
+.user-profile-close {
+position: absolute;
+top: 12px;
+right: 12px;
+padding: 6px 10px;
+color: var(--text-secondary);
+font-size: 20px;
+}
+.grid-tile-author {
+position: absolute;
+left: 8px;
+top: 8px;
+max-width: calc(100% - 16px);
+padding: 4px 7px;
+border-radius: 12px;
+background: rgba(0, 0, 0, 0.58);
+color: #fff;
+font-size: 11px;
+font-weight: 600;
+}
+.grid-tile-author .verified-badge { width: 12px; height: 12px; }
+.profile-handle-row { display: inline-flex; align-items: center; gap: 3px; }
 
 @media (max-width: 1160px) {
 
@@ -3309,11 +3872,63 @@ max-width: 100%;
 
 </head>
 
-<body>
+<body class="auth-locked">
+
+<div id="authScreen" aria-labelledby="authTitle">
+
+<div class="auth-card">
+
+<div class="auth-brand">
+
+<img src="./icon-192.png" alt="NXgram shutter icon">
+
+<div class="auth-brand-name" id="authTitle">NXgram</div>
+
+<div class="auth-brand-caption" id="authSubtitle">A little space for your people.</div>
+
+</div>
+
+<div class="auth-mode-switch" role="tablist" aria-label="Account access">
+
+<button type="button" class="auth-mode-button active" id="authSignupTab" onclick="NXgramLocalAuth.setMode('signup')" role="tab" aria-selected="true">Sign up</button>
+
+<button type="button" class="auth-mode-button" id="authLoginTab" onclick="NXgramLocalAuth.setMode('login')" role="tab" aria-selected="false">Log in</button>
+
+</div>
+
+<form class="auth-form" id="authForm" onsubmit="NXgramLocalAuth.submit(event)">
+
+<div>
+
+<label class="auth-label" for="authUsername">Username</label>
+
+<input class="auth-input" id="authUsername" name="username" type="text" autocomplete="username" required maxlength="32" placeholder="Choose a username">
+
+</div>
+
+<div>
+
+<label class="auth-label" for="authPassword">Password</label>
+
+<input class="auth-input" id="authPassword" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
+
+</div>
+
+<button class="auth-submit" id="authSubmitButton" type="submit">Create account</button>
+
+</form>
+
+<div class="auth-message" id="authMessage" role="status" aria-live="polite"></div>
+
+<div class="auth-local-note">This demo account is saved on this device only. It isn't an online account yet.</div>
+
+</div>
+
+</div>
 
 <!--
 
-========================================================================
+==========================================================================
 
 MOBILE TOP HEADER
 
@@ -3713,6 +4328,8 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <div style="font-weight:600; font-size:15px;" id="activeChatName">Select a chat</div>
 
+<div id="activeChatUsername" style="font-size:12px; color:var(--text-secondary);"></div>
+
 <div style="font-size:12px; color:var(--text-secondary);" id="activeChatStatus">Active now</div>
 
 </div>
@@ -3953,37 +4570,69 @@ CREATE NEW POST MODAL
 
 <div class="modal-top-bar">
 
-<button onclick="closeCreateModal()" style="font-size:14px;">Cancel</button>
+<button class="create-close-button" type="button" aria-label="Close new post" onclick="closeCreateModal()">×</button>
 
-<span>Create new post</span>
+<span id="createHeaderTitle">New post</span>
 
-<button onclick="publishNewPost()" style="color:var(--accent-blue); font-weight:700; font-size:14px;">Share</button>
+<button class="create-next-button" id="createNextButton" type="button" onclick="handleCreateNext()" disabled>Next</button>
 
 </div>
 
-<div class="create-body">
+<div id="createPickerStage">
 
-<label class="upload-dropzone" for="localImageFile">
+<div class="create-preview-area">
 
-<div style="font-size:32px; margin-bottom:6px;">   📸</div> <div style="font-weight:600; font-size:14px; margin-bottom:4px;">Select photo from device</div>
+<div class="create-preview-placeholder" id="createPreviewPlaceholder">
 
-<div style="font-size:12px; color:var(--text-secondary);">Or pick a ready-to-use aesthetic photo below</div>
+<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>
 
-<input type="file" id="localImageFile" accept="image/*" style="display:none;" onchange="handleLocalImageUpload(event)">
+<strong>Select a photo to preview</strong>
 
-</label>
+<span>Choose from your device or try a preset</span>
 
-<div>
+</div>
 
-<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Quick Aesthetic Presets:</div>
+<img id="createPreviewImg" class="create-preview-photo" src="" alt="Selected post preview">
+
+<div class="create-picker-actions">
+
+<div class="create-recents-button" aria-label="Recent photos">Recents <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+
+<button class="create-select-button" type="button" onclick="document.getElementById('localImageFile').click()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"></rect><circle cx="12" cy="12" r="4"></circle><path d="M7 3 9 1h6l2 2"></path></svg>Select</button>
+
+</div>
+
+<input type="file" class="create-file-input" id="localImageFile" accept="image/*" onchange="handleLocalImageUpload(event)">
+
+</div>
+
+<div class="create-preset-section">
+
+<button class="create-preset-toggle" type="button" id="createPresetToggle" aria-expanded="false" onclick="toggleCreatePresets()">Aesthetic presets <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
 
 <div class="preset-thumbs" id="presetThumbsRow"></div>
 
 </div>
 
-<img id="createPreviewImg" src="" style="width:100%; max-height:220px; object-fit:cover; border-radius:8px; display:none;" alt="Preview">
+<div class="create-bottom-tabs" aria-label="Post type">
+
+<button class="create-bottom-tab active" type="button" aria-current="page">POST</button>
+
+</div>
+
+</div>
+
+<div id="createDetailsStage" hidden>
+
+<button class="create-details-back" type="button" onclick="backToCreatePicker()">← Back to photo</button>
+
+<img id="createDetailsPreview" class="create-details-preview" src="" alt="Selected post preview">
+
+<label class="create-details-label" for="newPostCaption">Caption</label>
 
 <textarea class="create-textarea" id="newPostCaption" placeholder="Write a caption... (use #hashtags)"></textarea>
+
+<label class="create-details-label" for="newPostLocation">Location (optional)</label>
 
 <input type="text" class="create-input" id="newPostLocation" placeholder="Add location (e.g. Nagpur, Maharashtra)">
 
@@ -4083,6 +4732,12 @@ POST DETAIL MODAL (FOR EXPLORE & PROFILE CLICKS)
 
 </div>
 
+<div class="user-profile-modal" id="userProfileModal" role="dialog" aria-modal="true" aria-label="Profile" onclick="if(event.target===this) closeUserProfile()">
+
+<div class="user-profile-card" id="userProfileCard" style="position:relative;"></div>
+
+</div>
+
 <!--
 
 ========================================================================
@@ -4107,7 +4762,7 @@ FULLSCREEN STORY VIEWER
 
 <img id="storyViewerAvatar" src="" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
 
-<span id="storyViewerUser" style="font-weight:600; font-size:14px;"></span>
+<span id="storyViewerUser" style="font-weight:600; font-size:14px;"></span><span id="storyViewerVerified"></span>
 
 <span id="storyViewerTime" style="font-size:12px; opacity:0.75;">2h</span>
 
@@ -4325,7 +4980,7 @@ username: "nirav_rokde",
 
 userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80",
 
-verified: true,
+verified: false,
 
 location: "Nagpur, Maharashtra",
 
@@ -4357,7 +5012,7 @@ username: "priya_vlogs",
 
 userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
 
-verified: true,
+verified: false,
 
 location: "Marine Drive, Mumbai",
 
@@ -4457,7 +5112,7 @@ username: "mountain_explorer",
 
 userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
 
-verified: true,
+verified: false,
 
 location: "Manali, Himachal",
 
@@ -4513,7 +5168,7 @@ username: "cyber_circuits",
 
 userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
 
-verified: true,
+verified: false,
 
 location: "Bengaluru",
 
@@ -4569,7 +5224,7 @@ username: "lens_craft",
 
 userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
 
-verified: true,
+verified: false,
 
 location: "Jaipur",
 
@@ -4767,13 +5422,17 @@ notifications: [
 
 let appState = JSON.parse(localStorage.getItem("insta_clone_state_v1")) || DEFAULT_STATE;
 
+if (!appState.localVerification || typeof appState.localVerification !== "object" || Array.isArray(appState.localVerification)) appState.localVerification = {};
+
 let currentExploreCategory = "all";
 
 let currentProfileTab = "posts";
 
 let activeChatId = appState.chats[0].id;
 
-let selectedNewPostImg = PRESET_IMAGES[0];
+let selectedNewPostImg = "";
+
+let createPostStep = "picker";
 
 // Story Viewer Variables
 
@@ -4943,6 +5602,152 @@ const VERIFIED_SVG = `
 
 `;
 
+function escapeHTML(value) {
+
+return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]);
+
+}
+
+function isAdminUser() {
+
+return Boolean(window.NXgramLocalAuth && window.NXgramLocalAuth.isAdmin());
+
+}
+
+const REPO_VERIFIED_USERS = Object.freeze(["nirav_rokde", "Iamnirav"]);
+
+function isRepoVerifiedUser(username) {
+
+const normalized = String(username || "").trim().toLowerCase();
+
+return REPO_VERIFIED_USERS.some(name => name.toLowerCase() === normalized);
+
+}
+
+function isVerifiedUser(username) {
+
+const normalized = String(username || "").trim().toLowerCase();
+
+if (!normalized) return false;
+
+if (isRepoVerifiedUser(normalized)) return true;
+
+if (Object.prototype.hasOwnProperty.call(appState.localVerification, normalized)) return appState.localVerification[normalized] === true;
+
+if (normalized === String(appState.currentUser.username || "").trim().toLowerCase()) return isAdminUser();
+
+return false;
+
+}
+
+function verifiedBadgeFor(username) {
+
+return isVerifiedUser(username) ? VERIFIED_SVG : "";
+
+}
+
+function verifiedUsernameButton(username, className = "") {
+
+return `<button type="button" class="${className}" data-profile-user="${escapeHTML(username)}">${escapeHTML(username)}${verifiedBadgeFor(username)}</button>`;
+
+}
+
+function findUserInfo(username) {
+
+const normalized = String(username || "").toLowerCase();
+
+if (normalized === String(appState.currentUser.username || "").toLowerCase()) return { username: appState.currentUser.username, fullName: appState.currentUser.fullName, avatar: appState.currentUser.avatar };
+
+const sources = [appState.stories, appState.posts, appState.exploreExtras, appState.reels, appState.suggestions, appState.chats, appState.notifications];
+
+for (const source of sources) {
+
+const user = source.find(item => String(item.username || item.user || "").toLowerCase() === normalized);
+
+if (user) return { username: user.username || user.user, fullName: user.fullName || user.username || user.user, avatar: user.avatar || user.userAvatar || "" };
+
+}
+
+return { username: String(username || ""), fullName: String(username || ""), avatar: "" };
+
+}
+
+function openUserProfile(username) {
+
+const info = findUserInfo(username);
+
+const authoredPosts = [...appState.posts, ...appState.exploreExtras].filter(post => String(post.username).toLowerCase() === String(info.username).toLowerCase());
+
+const isOwnProfile = String(info.username).toLowerCase() === String(appState.currentUser.username).toLowerCase();
+
+const adminAction = isAdminUser() && !isOwnProfile
+? `<button type="button" class="user-profile-admin-action" id="userProfileVerifyButton">${isVerifiedUser(info.username) ? "Remove blue tick" : "Give blue tick"}</button>`
+: "";
+
+const avatar = info.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80";
+
+const card = document.getElementById("userProfileCard");
+
+card.innerHTML = `
+
+<button type="button" class="user-profile-close" aria-label="Close profile" onclick="closeUserProfile()">×</button>
+
+<img src="${escapeHTML(avatar)}" alt="${escapeHTML(info.username)} profile photo">
+
+<div class="user-profile-handle">${escapeHTML(info.username)}${verifiedBadgeFor(info.username)}</div>
+
+<div class="user-profile-fullname">${escapeHTML(info.fullName)}</div>
+
+<div class="user-profile-count">${authoredPosts.length} posts</div>
+
+${adminAction}
+
+`;
+
+const action = document.getElementById("userProfileVerifyButton");
+
+if (action) action.addEventListener("click", () => toggleUserVerification(info.username));
+
+document.getElementById("userProfileModal").classList.add("open");
+
+}
+
+function closeUserProfile() {
+
+document.getElementById("userProfileModal").classList.remove("open");
+
+}
+
+function toggleUserVerification(username) {
+
+if (!isAdminUser()) return;
+
+const normalized = String(username || "").trim().toLowerCase();
+
+if (!normalized || normalized === String(appState.currentUser.username).trim().toLowerCase()) return;
+
+appState.localVerification[normalized] = !isVerifiedUser(username);
+
+saveState();
+
+renderStories();
+
+renderFeed();
+
+renderReels();
+
+renderSuggestions();
+
+renderExploreGrid();
+
+renderProfile();
+
+renderNotifications();
+
+openUserProfile(username);
+
+}
+
 /* ------------------------------------------------------------------------
 
 4. STORIES TRAY & FULLSCREEN STORY VIEWER
@@ -4965,7 +5770,7 @@ ${story.isOwn ? '<span class="story-add-badge">+</span>' : ''}
 
 </div>
 
-<span class="story-username">${story.username}</span>
+<span class="story-username">${story.isOwn ? verifiedUsernameButton(appState.currentUser.username, "story-profile-link") : verifiedUsernameButton(story.username, "story-profile-link")}</span>
 
 </div>
 
@@ -5003,7 +5808,11 @@ const slide = storyUser.slides[activeStorySlideIdx];
 
 document.getElementById("storyViewerAvatar").src = storyUser.isOwn ?appState.currentUser.avatar : storyUser.avatar;
 
-document.getElementById("storyViewerUser").textContent = storyUser.isOwn ?appState.currentUser.username : storyUser.username;
+const viewerUsername = storyUser.isOwn ? appState.currentUser.username : storyUser.username;
+
+document.getElementById("storyViewerUser").textContent = viewerUsername;
+
+document.getElementById("storyViewerVerified").innerHTML = verifiedBadgeFor(viewerUsername);
 
 document.getElementById("storyViewerTime").textContent = slide.time;
 
@@ -5145,9 +5954,7 @@ feedContainer.innerHTML = appState.posts.map(post => `
 
 <div class="post-username-row">
 
-<span class="post-username-link" onclick="openPostDetail('${post.id}')">${post.username} </span>
-
-${post.verified ? VERIFIED_SVG : ''}
+${verifiedUsernameButton(post.username, "post-username-link")}
 
 <span class="post-time">• ${post.timeAgo}</span>
 
@@ -5245,7 +6052,7 @@ ${post.location ? `<span class="post-location">${post.location}</span>` : ''}
 
 <div class="post-caption">
 
-<span class="caption-user" onclick="openPostDetail('${post.id}')">${post.username}</span>
+<span class="caption-user">${verifiedUsernameButton(post.username, "caption-user-link")}</span>
 
 ${formatCaptionWithHashtags(post.caption)}
 
@@ -5265,7 +6072,7 @@ ${post.comments.slice(-2).map(c => `
 
 <div class="comment-line">
 
-<span><strong>${c.user}</strong>${c.text}</span>
+<span><strong>${verifiedUsernameButton(c.user, "comment-user-link")}</strong>${c.text}</span>
 
 </div>
 
@@ -5411,7 +6218,7 @@ function renderSuggestions() {
 
 document.getElementById("railCurrentUserImg").src = appState.currentUser.avatar;
 
-document.getElementById("railCurrentUsername").textContent = appState.currentUser.username;
+document.getElementById("railCurrentUsername").innerHTML = `${escapeHTML(appState.currentUser.username)}${verifiedBadgeFor(appState.currentUser.username)}`;
 
 document.getElementById("railCurrentFullname").textContent = appState.currentUser.fullName;
 
@@ -5427,7 +6234,7 @@ container.innerHTML = appState.suggestions.map((s, idx) => `
 
 <div class="rail-names">
 
-<span class="rail-username">${s.username}</span>
+<span class="rail-username">${verifiedUsernameButton(s.username, "rail-profile-link")}</span>
 
 <span class="rail-subtext" style="font-size:12px;">${s.subtitle}</span>
 
@@ -5511,6 +6318,8 @@ grid.innerHTML = filtered.map(post => `
 
 <img src="${post.image}" alt="Explore" loading="lazy">
 
+<div class="grid-tile-author">${verifiedUsernameButton(post.username, "search-profile-link")}</div>
+
 <div class="grid-overlay">
 
 <span class="grid-stat">❤️ ${post.likes.toLocaleString()}</span> <span class="grid-stat">💬 ${post.comments.length}</span>
@@ -5547,7 +6356,7 @@ container.innerHTML = appState.reels.map(reel => `
 
 <img src="${reel.username === appState.currentUser.username ? appState.currentUser.avatar : reel.avatar}" alt="${reel.username}">
 
-<span style="font-weight:600; font-size:14px;">${reel.username}</span>
+<span style="font-weight:600; font-size:14px;">${verifiedUsernameButton(reel.username, "reel-profile-link")}</span>
 
 <button class="reel-follow-pill" onclick="this.textContent = this.textContent === 'Follow' ?'Following' : 'Follow'">Follow</button>
 
@@ -5639,7 +6448,7 @@ renderReels();
 
 function renderChatThreads() {
 
-document.getElementById("chatHeaderUsername").textContent = appState.currentUser.username;
+document.getElementById("chatHeaderUsername").innerHTML = `${escapeHTML(appState.currentUser.username)}${verifiedBadgeFor(appState.currentUser.username)}`;
 
 const list = document.getElementById("chatThreadsContainer");
 
@@ -5662,6 +6471,8 @@ ${chat.online ? '<span class="online-indicator"></span>' : ''}
 <div class="chat-thread-info">
 
 <div class="chat-thread-name">${chat.fullName}</div>
+
+<div class="chat-thread-handle">${verifiedUsernameButton(chat.username, "chat-profile-link")}</div>
 
 <div class="chat-thread-preview" style="${chat.unread ? 'font-weight:700; color:var(--text-primary);' : ''}">
 
@@ -5714,6 +6525,8 @@ if (!thread) return;
 document.getElementById("activeChatAvatar").src = thread.avatar;
 
 document.getElementById("activeChatName").textContent = thread.fullName;
+
+document.getElementById("activeChatUsername").innerHTML = verifiedUsernameButton(thread.username, "chat-profile-link");
 
 document.getElementById("activeChatStatus").textContent = thread.online ? "Active now" : "Active 1h ago";
 
@@ -5847,7 +6660,7 @@ const myPosts = appState.posts.filter(p => p.username === u.username);
 
 document.getElementById("profileMainAvatar").src = u.avatar;
 
-document.getElementById("profileMainHandle").textContent = u.username;
+document.getElementById("profileMainHandle").innerHTML = `<span class="profile-handle-row">${escapeHTML(u.username)}${verifiedBadgeFor(u.username)}</span>`;
 
 document.getElementById("profilePostsCount").textContent = myPosts.length;
 
@@ -6101,27 +6914,65 @@ showToast(`Copied link: instagram.com/${appState.currentUser.username}`);
 
 ------------------------------------------------------------------------ */
 
-function openCreateModal() {
+function renderCreatePresets() {
 
 const presetsRow = document.getElementById("presetThumbsRow");
 
 presetsRow.innerHTML = PRESET_IMAGES.map((url, idx) => `
 
-<img src="${url}" class="preset-thumb ${idx === 0 ? 'selected' : ''}" onclick="selectPresetImage('${url}', this)" alt="Preset">
+<img src="${url}" class="preset-thumb" onclick="selectPresetImage('${url}', this)" alt="Aesthetic preset ${idx + 1}" title="Use aesthetic preset ${idx + 1}">
 
 `).join("");
 
-selectedNewPostImg = PRESET_IMAGES[0];
+}
+
+function updateCreatePreview() {
 
 const preview = document.getElementById("createPreviewImg");
 
-preview.src = selectedNewPostImg;
+const placeholder = document.getElementById("createPreviewPlaceholder");
 
-preview.style.display = "block";
+const next = document.getElementById("createNextButton");
+
+const hasImage = Boolean(selectedNewPostImg);
+
+preview.src = hasImage ? selectedNewPostImg : "";
+
+preview.style.display = hasImage ? "block" : "none";
+
+placeholder.style.display = hasImage ? "none" : "flex";
+
+next.disabled = !hasImage;
+
+}
+
+function openCreateModal() {
+
+renderCreatePresets();
+
+selectedNewPostImg = "";
+
+createPostStep = "picker";
+
+document.getElementById("localImageFile").value = "";
 
 document.getElementById("newPostCaption").value = "";
 
 document.getElementById("newPostLocation").value = "";
+
+document.getElementById("presetThumbsRow").classList.remove("open");
+
+document.getElementById("createPresetToggle").setAttribute("aria-expanded", "false");
+
+document.getElementById("createPickerStage").hidden = false;
+
+document.getElementById("createDetailsStage").hidden = true;
+
+document.getElementById("createHeaderTitle").textContent = "New post";
+
+document.getElementById("createNextButton").textContent = "Next";
+
+updateCreatePreview();
 
 document.getElementById("createPostModal").classList.add("open");
 
@@ -6133,41 +6984,57 @@ document.getElementById("createPostModal").classList.remove("open");
 
 }
 
+function toggleCreatePresets() {
+
+const row = document.getElementById("presetThumbsRow");
+
+const toggle = document.getElementById("createPresetToggle");
+
+const open = row.classList.toggle("open");
+
+toggle.setAttribute("aria-expanded", String(open));
+
+}
+
 function selectPresetImage(url, el) {
 
 selectedNewPostImg = url;
 
-document.querySelectorAll(".preset-thumb").forEach(t => t.classList.remove("selected"));
+document.querySelectorAll("#presetThumbsRow .preset-thumb").forEach(t => t.classList.remove("selected"));
 
 if (el) el.classList.add("selected");
 
-const preview = document.getElementById("createPreviewImg");
-
-preview.src = url;
-
-preview.style.display = "block";
+updateCreatePreview();
 
 }
 
 function handleLocalImageUpload(event) {
 
-const file = event.target.files[0];
+const file = event.target.files && event.target.files[0];
 
 if (!file) return;
 
+if (!file.type.startsWith("image/")) {
+
+showToast("Choose an image file.");
+
+event.target.value = "";
+
+return;
+
+}
+
 const reader = new FileReader();
+
+reader.onerror = () => showToast("Could not read that photo. Try another image.");
 
 reader.onload = function(e) {
 
 selectedNewPostImg = e.target.result;
 
-const preview = document.getElementById("createPreviewImg");
+document.querySelectorAll("#presetThumbsRow .preset-thumb").forEach(t => t.classList.remove("selected"));
 
-preview.src = selectedNewPostImg;
-
-preview.style.display = "block";
-
-document.querySelectorAll(".preset-thumb").forEach(t => t.classList.remove("selected"));
+updateCreatePreview();
 
 };
 
@@ -6175,7 +7042,53 @@ reader.readAsDataURL(file);
 
 }
 
+function handleCreateNext() {
+
+if (!selectedNewPostImg) {
+
+showToast("Select a photo first.");
+
+return;
+
+}
+
+if (createPostStep === "picker") {
+
+createPostStep = "details";
+
+document.getElementById("createPickerStage").hidden = true;
+
+document.getElementById("createDetailsStage").hidden = false;
+
+document.getElementById("createDetailsPreview").src = selectedNewPostImg;
+
+document.getElementById("createNextButton").textContent = "Share";
+
+document.getElementById("newPostCaption").focus();
+
+return;
+
+}
+
+publishNewPost();
+
+}
+
+function backToCreatePicker() {
+
+createPostStep = "picker";
+
+document.getElementById("createPickerStage").hidden = false;
+
+document.getElementById("createDetailsStage").hidden = true;
+
+document.getElementById("createNextButton").textContent = "Next";
+
+}
+
 function publishNewPost() {
+
+if (!selectedNewPostImg) return showToast("Select a photo first.");
 
 const caption = document.getElementById("newPostCaption").value.trim() || "New post   ✨ #InstaClone";
 
@@ -6189,7 +7102,7 @@ username: appState.currentUser.username,
 
 userAvatar: appState.currentUser.avatar,
 
-verified: true,
+verified: false,
 
 location,
 
@@ -6253,9 +7166,7 @@ modalContent.innerHTML = `
 
 <img src="${post.username === appState.currentUser.username ? appState.currentUser.avatar : post.userAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
 
-<span style="font-weight:600; font-size:14px;">${post.username}</span>
-
-${post.verified ? VERIFIED_SVG : ''}
+<span style="font-weight:600; font-size:14px;">${verifiedUsernameButton(post.username, "detail-profile-link")}</span>
 
 </div>
 
@@ -6267,7 +7178,7 @@ ${post.verified ? VERIFIED_SVG : ''}
 
 <div style="font-size:14px; line-height:1.4;">
 
-<strong>${post.username}</strong> ${formatCaptionWithHashtags(post.caption)}
+<strong>${verifiedUsernameButton(post.username, "detail-profile-link")}</strong> ${formatCaptionWithHashtags(post.caption)}
 
 </div>
 
@@ -6275,7 +7186,7 @@ ${post.comments.map(c => `
 
 <div style="font-size:14px; line-height:1.4;">
 
-<strong>${c.user}</strong> ${c.text}
+<strong>${verifiedUsernameButton(c.user, "comment-user-link")}</strong> ${c.text}
 
 </div>
 
@@ -6349,7 +7260,7 @@ container.innerHTML = appState.notifications.map(n => `
 
 <div class="notif-text">
 
-<strong>${n.user}</strong> ${n.action}
+<strong>${verifiedUsernameButton(n.user, "notification-profile-link")}</strong> ${n.action}
 
 <span style="color:var(--text-secondary);"> ${n.time}</span>
 
@@ -6375,6 +7286,229 @@ console.warn("Service worker registration failed:", error);
 
 }
 
+const NXgramLocalAuth = (() => {
+
+const STORAGE_KEY = "nxgram_local_auth_v1";
+const PBKDF2_ITERATIONS = 120000;
+let mode = "signup";
+
+function readAccount() {
+
+try {
+
+const account = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+
+if (account && account.version === 1 && typeof account.username === "string" && account.salt && account.verifier) return account;
+
+} catch (error) {
+
+console.warn("Local account data could not be read.");
+
+}
+
+return null;
+
+}
+
+function showMessage(text, isError = true) {
+
+const message = document.getElementById("authMessage");
+
+message.textContent = text;
+
+message.style.color = isError ? "#b42318" : "#137333";
+
+}
+
+function setMode(nextMode) {
+
+mode = nextMode === "login" ? "login" : "signup";
+
+const signup = mode === "signup";
+
+document.getElementById("authSignupTab").classList.toggle("active", signup);
+
+document.getElementById("authSignupTab").setAttribute("aria-selected", String(signup));
+
+document.getElementById("authLoginTab").classList.toggle("active", !signup);
+
+document.getElementById("authLoginTab").setAttribute("aria-selected", String(!signup));
+
+document.getElementById("authSubtitle").textContent = signup ? "A little space for your people." : "Welcome back to NXgram.";
+
+document.getElementById("authSubmitButton").textContent = signup ? "Create account" : "Log in";
+
+document.getElementById("authPassword").setAttribute("autocomplete", signup ? "new-password" : "current-password");
+
+document.getElementById("authPassword").setAttribute("placeholder", signup ? "At least 8 characters" : "Your password");
+
+showMessage("");
+
+}
+
+function bytesToBase64(bytes) {
+
+let binary = "";
+
+for (const byte of bytes) binary += String.fromCharCode(byte);
+
+return btoa(binary);
+
+}
+
+function base64ToBytes(text) {
+
+return Uint8Array.from(atob(text), char => char.charCodeAt(0));
+
+}
+
+async function deriveVerifier(password, salt) {
+
+const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+
+const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, key, 256);
+
+return new Uint8Array(bits);
+
+}
+
+function unlock() {
+
+document.body.classList.remove("auth-locked");
+
+document.getElementById("authPassword").value = "";
+
+}
+
+async function submit(event) {
+
+event.preventDefault();
+
+const username = document.getElementById("authUsername").value.trim();
+
+const password = document.getElementById("authPassword").value;
+
+if (!username || !password) return;
+
+if (mode === "signup" && password.length < 8) {
+
+showMessage("Use at least 8 characters for your password.");
+
+return;
+
+}
+
+if (!crypto?.subtle) {
+
+showMessage("This browser cannot set up local sign-in securely.");
+
+return;
+
+}
+
+const button = document.getElementById("authSubmitButton");
+
+button.disabled = true;
+
+button.textContent = mode === "signup" ? "Creating account…" : "Checking…";
+
+try {
+
+const account = readAccount();
+
+if (mode === "signup") {
+
+if (account) {
+
+showMessage("An account already exists on this device.");
+
+return;
+
+}
+
+const salt = crypto.getRandomValues(new Uint8Array(16));
+
+const verifier = await deriveVerifier(password, salt);
+
+const role = isRepoVerifiedUser(username) ? "admin" : "user";
+
+localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, username, role, salt: bytesToBase64(salt), verifier: bytesToBase64(verifier), iterations: PBKDF2_ITERATIONS }));
+
+showMessage("Account created. Welcome to NXgram!", false);
+
+unlock();
+
+return;
+
+}
+
+if (!account) {
+
+showMessage("No account is saved on this device yet. Sign up first.");
+
+return;
+
+}
+
+const salt = base64ToBytes(account.salt);
+
+const supplied = await deriveVerifier(password, salt);
+
+const expected = base64ToBytes(account.verifier);
+
+const matches = supplied.length === expected.length && supplied.every((value, index) => value === expected[index]);
+
+if (!matches || account.username.toLowerCase() !== username.toLowerCase()) {
+
+showMessage("Username or password doesn't match this device's account.");
+
+return;
+
+}
+
+showMessage("Welcome back!", false);
+
+unlock();
+
+} catch (error) {
+
+console.error("Local sign-in failed.", error);
+
+showMessage("Could not save this account on the device. Check available storage and try again.");
+
+} finally {
+
+button.disabled = false;
+
+button.textContent = mode === "signup" ? "Create account" : "Log in";
+
+}
+}
+
+function init() {
+
+if (readAccount()) {
+
+// A saved local account enters directly, as requested; app data remains separate.
+
+document.body.classList.remove("auth-locked");
+
+return;
+
+}
+
+document.body.classList.add("auth-locked");
+
+setMode("signup");
+
+}
+
+return { init, setMode, submit, isAdmin: () => readAccount()?.role === "admin" };
+
+})();
+
+window.NXgramLocalAuth = NXgramLocalAuth;
+
 /* ------------------------------------------------------------------------
 
 13. APP BOOTSTRAP
@@ -6390,6 +7524,24 @@ document.body.classList.add("dark-mode");
 document.getElementById("themeToggleLabel").textContent = "Light Mode";
 
 }
+
+NXgramLocalAuth.init();
+
+document.addEventListener("click", event => {
+
+const profileButton = event.target.closest("[data-profile-user]");
+
+if (profileButton) {
+
+event.preventDefault();
+
+event.stopPropagation();
+
+openUserProfile(profileButton.dataset.profileUser);
+
+}
+
+});
 
 syncUserAvatars();
 
