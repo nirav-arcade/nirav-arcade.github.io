@@ -7670,7 +7670,8 @@ async function boot(user){
   postsRaw.forEach(p=>{if(commentsBy[p.id]!==undefined)return;commentsBy[p.id]=[];
    unsubs.push(onSnapshot(query(collection(db,"posts",p.id,"comments"),orderBy("createdAt","asc")),cs=>{commentsBy[p.id]=cs.docs.map(c=>({id:c.id,...c.data()}));rebuild();}));});
   rebuild();}));
- unsubs.push(onSnapshot(collection(db,"users"),qs=>{renderMembers(qs.docs.map(x=>({id:x.id,...x.data()})));}));
+ if(window.__nxIsAdmin){unsubs.push(onSnapshot(collection(db,"users"),qs=>{renderMembers(qs.docs.map(x=>({id:x.id,...x.data()})));}));}
+ else{$("nxMembersBtn").textContent="⚙ Account";$("nxMTitle").textContent="Account";$("nxMList").innerHTML="";}
 }
 function rebuild(){
  appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:avatarFor(p.username),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
