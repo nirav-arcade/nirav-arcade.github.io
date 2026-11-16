@@ -1,4 +1,4 @@
-const CACHE_NAME = "nxgram-shell-v1";
+const CACHE_NAME = "nxgram-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const APP_SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
-  "./favicon.png"
+  "./favicon.png",
+  "./icon-maskable-512.png"
 ];
 
 self.addEventListener("install", event => {

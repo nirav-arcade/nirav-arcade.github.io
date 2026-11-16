@@ -3260,6 +3260,9 @@ transform: translateX(-50%) translateY(0);
 
 /* First-run local sign-in */
 
+body.nx-booting #authScreen{display:none !important;}
+body.nx-booting{background:#fff;}
+body.nx-booting::after{content:"NXgram";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Billabong","Segoe Script","Brush Script MT",cursive;font-size:48px;color:#7b2ff7;z-index:300000;background:#fff;}
 body.auth-locked > :not(#authScreen):not(script) {
 
 display: none !important;
@@ -3917,7 +3920,7 @@ max-width: 100%;
 
 </head>
 
-<body class="auth-locked">
+<body class="auth-locked nx-booting">
 
 <div id="authScreen" aria-labelledby="authTitle">
 
@@ -7541,7 +7544,7 @@ console.warn("Service worker registration failed:", error);
 }
 
 const NXgramLocalAuth = {
-init() { document.body.classList.add("auth-locked"); if (window.__nxSetMode) window.__nxSetMode("signup"); },
+init() { if (window.__nxSetMode) window.__nxSetMode("signup"); },
 setMode(m) { if (window.__nxSetMode) window.__nxSetMode(m); },
 submit(e) { e.preventDefault(); if (window.__nxSubmit) window.__nxSubmit(); },
 isAdmin() { return Boolean(window.__nxIsAdmin); }
@@ -7693,7 +7696,8 @@ $("nxDelete").onclick=async()=>{
   await deleteDoc(doc(db,"users",me.uid));
   unsubs.forEach(f=>f());unsubs=[];await deleteUser(auth.currentUser);me=null;$("nxMembers").style.display="none";$("nxMembersBtn").style.display="none";document.body.classList.add("auth-locked");
  }catch(e){alert("Couldn't delete: "+(e.message||e));}};
-onAuthStateChanged(auth,u=>{if(u&&!me)boot(u);else if(!u)document.body.classList.add("auth-locked");});
+const ready=()=>document.body.classList.remove("nx-booting");setTimeout(ready,8000);
+onAuthStateChanged(auth,async u=>{if(u&&!me){try{await boot(u);}catch(e){console.warn(e);}ready();}else if(!u){document.body.classList.add("auth-locked");ready();}else ready();});
 // ---- overrides ----
 window.saveState=function(){};
 async function flip(id){const r=doc(db,"posts",id);const p=postsRaw.find(x=>x.id===id);if(!p)return;const has=(p.likedBy||[]).includes(me.uid);
