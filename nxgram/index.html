@@ -7618,11 +7618,11 @@ body.dark-mode #nxAuth .box{background:#121212;border-color:#262626}
 #nxMembers .row small{color:#8e8e8e;margin-left:auto}#nxMembers button{margin-top:12px;margin-right:8px;padding:7px 14px;border:0;border-radius:8px;cursor:pointer;font-weight:600}
 </style>
 <button id="nxMembersBtn">👥 Members</button>
-<div id="nxMembers"><div class="box"><h3 id="nxMTitle">Members</h3><div id="nxMList"></div><button id="nxMClose">Close</button><button id="nxLogout" style="background:#ed4956;color:#fff">Log out</button></div></div>
+<div id="nxMembers"><div class="box"><h3 id="nxMTitle">Members</h3><div id="nxMList"></div><button id="nxMClose">Close</button><button id="nxLogout" style="background:#ed4956;color:#fff">Log out</button><button id="nxDelete" style="background:#eee;color:#8e8e8e">Delete my account</button></div></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,onSnapshot,query,orderBy,limit,writeBatch,serverTimestamp,arrayUnion,arrayRemove,increment} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,getDocs,where,deleteDoc,collection,doc,getDoc,setDoc,addDoc,updateDoc,onSnapshot,query,orderBy,limit,writeBatch,serverTimestamp,arrayUnion,arrayRemove,increment} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const app=initializeApp({apiKey:"AIzaSyDcQsaVRFev93JwZVcLcsJ06-ScvLLYh6U",authDomain:"nxgram-8f0f9.firebaseapp.com",projectId:"nxgram-8f0f9",storageBucket:"nxgram-8f0f9.firebasestorage.app",messagingSenderId:"26909901394",appId:"1:26909901394:web:e42238d72b55420168958b"});
 const auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
@@ -7664,6 +7664,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
+ rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
   postsRaw.forEach(p=>{if(commentsBy[p.id]!==undefined)return;commentsBy[p.id]=[];
@@ -7684,6 +7685,12 @@ function renderMembers(list){
 $("nxMembersBtn").onclick=()=>{$("nxMembers").style.display="flex";};
 $("nxMClose").onclick=()=>{$("nxMembers").style.display="none";};
 $("nxLogout").onclick=async()=>{$("nxMembers").style.display="none";unsubs.forEach(f=>f());unsubs=[];await signOut(auth);$("nxMembersBtn").style.display="none";me=null;document.body.classList.add("auth-locked");};
+$("nxDelete").onclick=async()=>{
+ if(!confirm("Delete your account and all your posts? This can't be undone."))return;
+ try{const qs=await getDocs(query(collection(db,"posts"),where("uid","==",me.uid)));for(const d of qs.docs)await deleteDoc(d.ref);
+  await deleteDoc(doc(db,"users",me.uid));
+  unsubs.forEach(f=>f());unsubs=[];await deleteUser(auth.currentUser);me=null;$("nxMembers").style.display="none";$("nxMembersBtn").style.display="none";document.body.classList.add("auth-locked");
+ }catch(e){alert("Couldn't delete: "+(e.message||e));}};
 onAuthStateChanged(auth,u=>{if(u&&!me)boot(u);else if(!u)document.body.classList.add("auth-locked");});
 // ---- overrides ----
 window.saveState=function(){};
