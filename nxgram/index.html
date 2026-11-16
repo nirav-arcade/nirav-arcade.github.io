@@ -7676,7 +7676,7 @@ window.__nxSetMode=function(m){mode=m==="login"?"login":"signup";const su=mode==
  $("authSignupTab").setAttribute("aria-selected",String(su));$("authLoginTab").setAttribute("aria-selected",String(!su));
  $("authSubtitle").textContent=su?"A little space for your people.":"Welcome back to NXgram.";
  $("authSubmitButton").textContent=su?"Create account":"Log in";$("authPassword").placeholder=su?"At least 6 characters":"Your password";$("authPassword").setAttribute("autocomplete",su?"new-password":"current-password");showMsg("");};
-function fail(e){const c=e.code||"";showMsg(c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found")?"Wrong username or password.":c.includes("weak-password")?"Password is too weak (min 6 characters).":c.includes("too-many")?"Too many tries, wait a bit.":c.includes("permission")?"That username is taken. Try another one.":(e.message||"Something went wrong"));}
+function fail(e){const c=e.code||"";if(c.includes("email-already-in-use")){window.__nxSetMode("login");showMsg("This username already has an account. Use Log in (you are on it now), type your password.");return;}showMsg(c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found")?"Wrong username or password.":c.includes("weak-password")?"Password is too weak (min 6 characters).":c.includes("too-many")?"Too many tries, wait a bit.":c.includes("permission")?"That username is taken. Try another one.":(e.message||"Something went wrong"));}
 window.__nxSubmit=async function(){
  const u=$("authUsername").value.trim().toLowerCase(),p=$("authPassword").value;
  if(!/^[a-z0-9._]{3,20}$/.test(u)){showMsg("Username: 3-20 letters, numbers, . or _");return;}
