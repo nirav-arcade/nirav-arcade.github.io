@@ -1,0 +1,6172 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<link rel="manifest" href="./manifest.webmanifest" />
+<meta name="theme-color" content="#7b2ff7" />
+
+<title>InstaClone • Full Interactive Social App</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+/*
+
+==========================================================================
+
+1. CSS VARIABLES & THEME SYSTEM (LIGHT & DARK MODE)
+
+==========================================================================
+
+*/
+
+:root {
+
+--bg-primary: #ffffff;
+
+--bg-secondary: #fafafa;
+
+--bg-elevated: #ffffff;
+
+--bg-hover: #f2f2f2;
+
+--bg-input: #efefef;
+
+--border-color: #dbdbdb;
+
+--border-subtle: #efefef;
+
+--text-primary: #000000;
+
+--text-secondary: #737373;
+
+--text-muted: #a8a8a8;
+
+--accent-blue: #0095f6;
+
+--accent-blue-hover: #1877f2;
+
+--heart-red: #ff3040;
+
+--story-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+
+--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+--shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.25);
+
+--sidebar-width: 244px;
+
+--sidebar-collapsed: 72px;
+
+--mobile-header-h: 54px;
+
+--mobile-nav-h: 50px;
+
+--transition-fast: 0.15s ease;
+
+--transition-norm: 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+}
+
+body.dark-mode {
+
+--bg-primary: #000000;
+
+--bg-secondary: #121212;
+
+--bg-elevated: #262626;
+
+--bg-hover: #1a1a1a;
+
+--bg-input: #262626;
+
+--border-color: #262626;
+
+--border-subtle: #1c1c1c;
+
+--text-primary: #f5f5f5;
+
+--text-secondary: #a8a8a8;
+
+--text-muted: #737373;
+
+--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+
+--shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.8);
+
+}
+
+/*
+
+==========================================================================
+
+2. GLOBAL RESET & BASE STYLES
+
+==========================================================================
+
+*/
+
+*{
+
+box-sizing: border-box;
+
+margin: 0;
+
+padding: 0;
+
+-webkit-tap-highlight-color: transparent;
+
+}
+
+html, body {
+
+height: 100%;
+
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+background-color: var(--bg-primary);
+
+color: var(--text-primary);
+
+overflow-x: hidden;
+
+transition: background-color var(--transition-fast), color var(--transition-fast);
+
+}
+
+button {
+
+font-family: inherit;
+
+background: none;
+
+border: none;
+
+color: inherit;
+
+cursor: pointer;
+
+outline: none;
+
+}
+
+input, textarea {
+
+font-family: inherit;
+
+color: inherit;
+
+outline: none;
+
+border: none;
+
+background: none;
+
+}
+
+a{
+
+text-decoration: none;
+
+color: inherit;
+
+}
+
+ul, ol {
+
+list-style: none;
+
+}
+
+img, video {
+
+display: block;
+
+max-width: 100%;
+
+}
+
+/* Custom Scrollbars */
+
+::-webkit-scrollbar {
+
+width: 6px;
+
+height: 6px;
+
+}
+
+::-webkit-scrollbar-track {
+
+background: transparent;
+
+}
+
+::-webkit-scrollbar-thumb {
+
+background: rgba(136, 136, 136, 0.4);
+
+border-radius: 3px;
+
+}
+
+::-webkit-scrollbar-thumb:hover {
+
+background: rgba(136, 136, 136, 0.7);
+
+}
+
+.no-scrollbar::-webkit-scrollbar {
+
+display: none;
+
+}
+
+.no-scrollbar {
+
+-ms-overflow-style: none;
+
+scrollbar-width: none;
+
+}
+
+/*
+
+==========================================================================
+
+3. TYPOGRAPHY & BRAND LOGO
+
+==========================================================================
+
+*/
+
+.brand-logo-text {
+
+font-family: 'Grand Hotel', cursive;
+
+font-size: 29px;
+
+font-weight: 400;
+
+letter-spacing: 0.5px;
+
+user-select: none;
+
+line-height: 1;
+
+}
+
+.verified-badge {
+
+display: inline-flex;
+
+align-items: center;
+
+justify-content: center;
+
+width: 14px;
+
+height: 14px;
+
+margin-left: 4px;
+
+vertical-align: middle;
+
+color: var(--accent-blue);
+
+}
+
+/*
+
+==========================================================================
+
+4. APP SHELL LAYOUT (DESKTOP SIDEBAR + MAIN STAGE + MOBILE BARS)
+
+==========================================================================
+
+*/
+
+.app-container {
+
+display: flex;
+
+min-height: 100vh;
+
+width: 100%;
+
+}
+
+/* Left Navigation Sidebar (Desktop & Tablet) */
+
+.sidebar {
+
+position: fixed;
+
+top: 0;
+
+left: 0;
+
+bottom: 0;
+
+width: var(--sidebar-width);
+
+background-color: var(--bg-primary);
+
+border-right: 1px solid var(--border-color);
+
+padding: 8px 12px 20px;
+
+display: flex;
+
+flex-direction: column;
+
+justify-content: space-between;
+
+z-index: 100;
+
+transition: width var(--transition-norm), background-color var(--transition-fast);
+
+}
+
+.sidebar-logo-wrap {
+
+padding: 25px 12px 16px;
+
+margin-bottom: 12px;
+
+display: flex;
+
+align-items: center;
+
+cursor: pointer;
+
+}
+
+.sidebar-logo-icon {
+
+display: none;
+
+}
+
+.nav-list {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 4px;
+
+flex: 1;
+
+}
+
+.nav-item {
+
+display: flex;
+
+align-items: center;
+
+gap: 16px;
+
+padding: 12px;
+
+border-radius: 8px;
+
+font-size: 16px;
+
+font-weight: 400;
+
+transition: background-color var(--transition-fast), transform 0.1s ease;
+
+position: relative;
+
+width: 100%;
+
+text-align: left;
+
+}
+
+.nav-item:hover {
+
+background-color: var(--bg-hover);
+
+}
+
+.nav-item:active {
+
+transform: scale(0.97);
+
+}
+
+.nav-item.active {
+
+font-weight: 700;
+
+}
+
+.nav-item svg {
+
+width: 24px;
+
+height: 24px;
+
+flex-shrink: 0;
+
+transition: transform var(--transition-fast);
+
+}
+
+.nav-item:hover svg {
+
+transform: scale(1.06);
+
+}
+
+.nav-avatar {
+
+width: 24px;
+
+height: 24px;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+border: 1.5px solid transparent;
+
+}
+
+.nav-item.active .nav-avatar {
+
+border-color: var(--text-primary);
+
+}
+
+.badge-dot {
+
+position: absolute;
+
+top: 10px;
+
+left: 28px;
+
+width: 9px;
+
+height: 9px;
+
+background-color: var(--heart-red);
+
+border-radius: 50%;
+
+border: 2px solid var(--bg-primary);
+
+}
+
+.badge-count {
+
+position: absolute;
+
+top: 8px;
+
+left: 24px;
+
+min-width: 18px;
+
+height: 18px;
+
+padding: 0 5px;
+
+background-color: var(--heart-red);
+
+color: #fff;
+
+font-size: 11px;
+
+font-weight: 700;
+
+border-radius: 10px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+border: 2px solid var(--bg-primary);
+
+}
+
+/* Mobile Top Header */
+
+.mobile-header {
+
+display: none;
+
+position: fixed;
+
+top: 0;
+
+left: 0;
+
+right: 0;
+
+height: var(--mobile-header-h);
+
+background-color: var(--bg-primary);
+
+border-bottom: 1px solid var(--border-color);
+
+padding: 0 16px;
+
+align-items: center;
+
+justify-content: space-between;
+
+z-index: 100;
+
+}
+
+.mobile-header-actions {
+
+display: flex;
+
+align-items: center;
+
+gap: 18px;
+
+}
+
+.mobile-header-btn {
+
+position: relative;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+}
+
+/* Mobile Bottom Navigation Bar */
+
+.mobile-bottom-nav {
+
+display: none;
+
+position: fixed;
+
+bottom: 0;
+
+left: 0;
+
+right: 0;
+
+height: var(--mobile-nav-h);
+
+background-color: var(--bg-primary);
+
+border-top: 1px solid var(--border-color);
+
+align-items: center;
+
+justify-content: space-around;
+
+z-index: 100;
+
+}
+
+.mobile-nav-btn {
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+padding: 8px;
+
+position: relative;
+
+}
+
+/* Main Content Stage */
+
+.main-stage {
+
+margin-left: var(--sidebar-width);
+
+flex: 1;
+
+min-height: 100vh;
+
+display: flex;
+
+justify-content: center;
+
+transition: margin-left var(--transition-norm);
+
+}
+
+/*
+
+==========================================================================
+
+5. VIEW CONTAINERS (HOME, EXPLORE, REELS, MESSAGES, PROFILE)
+
+==========================================================================
+
+*/
+
+.view-section {
+
+display: none;
+
+width: 100%;
+
+}
+
+.view-section.active {
+
+display: flex;
+
+}
+
+/* --- HOME VIEW --- */
+
+.home-layout {
+
+display: flex;
+
+justify-content: center;
+
+gap: 64px;
+
+width: 100%;
+
+max-width: 1015px;
+
+padding: 24px 16px 60px;
+
+}
+
+.feed-column {
+
+width: 100%;
+
+max-width: 470px;
+
+display: flex;
+
+flex-direction: column;
+
+}
+
+/* Stories Tray */
+
+.stories-container {
+
+position: relative;
+
+background-color: var(--bg-primary);
+
+border-bottom: 1px solid var(--border-subtle);
+
+padding: 8px 0 14px;
+
+margin-bottom: 16px;
+
+}
+
+.stories-scroll {
+
+display: flex;
+
+gap: 14px;
+
+overflow-x: auto;
+
+padding: 4px 2px;
+
+scroll-behavior: smooth;
+
+}
+
+.story-item {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+width: 66px;
+
+flex-shrink: 0;
+
+cursor: pointer;
+
+}
+
+.story-ring {
+
+width: 66px;
+
+height: 66px;
+
+border-radius: 50%;
+
+padding: 2.5px;
+
+background: var(--story-gradient);
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+margin-bottom: 6px;
+
+transition: transform 0.15s ease;
+
+}
+
+.story-item:active .story-ring {
+
+transform: scale(0.94);
+
+}
+
+.story-ring.seen {
+
+background: var(--border-color);
+
+}
+
+.story-ring.own {
+
+background: transparent;
+
+border: 1px solid var(--border-color);
+
+position: relative;
+
+}
+
+.story-avatar {
+
+width: 100%;
+
+height: 100%;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+border: 2.5px solid var(--bg-primary);
+
+}
+
+.story-add-badge {
+
+position: absolute;
+
+bottom: 0;
+
+right: 0;
+
+width: 20px;
+
+height: 20px;
+
+border-radius: 50%;
+
+background-color: var(--accent-blue);
+
+color: #fff;
+
+border: 2px solid var(--bg-primary);
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+font-size: 14px;
+
+font-weight: 700;
+
+}
+
+.story-username {
+
+font-size: 12px;
+
+color: var(--text-primary);
+
+max-width: 66px;
+
+overflow: hidden;
+
+text-overflow: ellipsis;
+
+white-space: nowrap;
+
+text-align: center;
+
+}
+
+.story-ring.seen + .story-username {
+
+color: var(--text-secondary);
+
+}
+
+/* Feed Post Card */
+
+.post-card {
+
+border-bottom: 1px solid var(--border-color);
+
+padding-bottom: 16px;
+
+margin-bottom: 20px;
+
+}
+
+.post-header {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+padding: 8px 4px 12px;
+
+}
+
+.post-user-info {
+
+display: flex;
+
+align-items: center;
+
+gap: 10px;
+
+}
+
+.post-avatar-ring {
+
+width: 38px;
+
+height: 38px;
+
+border-radius: 50%;
+
+padding: 2px;
+
+background: var(--story-gradient);
+
+cursor: pointer;
+
+}
+
+.post-avatar-ring.no-story {
+
+background: transparent;
+
+padding: 0;
+
+}
+
+.post-avatar-ring img {
+
+width: 100%;
+
+height: 100%;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+border: 2px solid var(--bg-primary);
+
+}
+
+.post-meta {
+
+display: flex;
+
+flex-direction: column;
+
+}
+
+.post-username-row {
+
+display: flex;
+
+align-items: center;
+
+font-size: 14px;
+
+font-weight: 600;
+
+}
+
+.post-username-link {
+
+cursor: pointer;
+
+}
+
+.post-username-link:hover {
+
+opacity: 0.75;
+
+}
+
+.post-time {
+
+color: var(--text-secondary);
+
+font-weight: 400;
+
+margin-left: 4px;
+
+}
+
+.post-location {
+
+font-size: 12px;
+
+color: var(--text-primary);
+
+margin-top: 1px;
+
+}
+
+.post-more-btn {
+
+padding: 6px;
+
+border-radius: 50%;
+
+}
+
+.post-more-btn:hover {
+
+background-color: var(--bg-hover);
+
+}
+
+/* Post Media Container */
+
+.post-media-box {
+
+position: relative;
+
+width: 100%;
+
+background-color: #000;
+
+border-radius: 4px;
+
+overflow: hidden;
+
+border: 1px solid var(--border-subtle);
+
+user-select: none;
+
+}
+
+.post-media-img {
+
+width: 100%;
+
+max-height: 585px;
+
+object-fit: cover;
+
+display: block;
+
+}
+
+/* Double-Tap Heart Animation */
+
+.double-tap-heart {
+
+position: absolute;
+
+top: 50%;
+
+left: 50%;
+
+transform: translate(-50%, -50%) scale(0);
+
+pointer-events: none;
+
+filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+
+z-index: 10;
+
+}
+
+.double-tap-heart.animate {
+
+animation: popHeart 0.85s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;
+
+}
+
+@keyframes popHeart {
+
+0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+
+20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+
+40% { transform: translate(-50%, -50%) scale(0.95); opacity: 1; }
+
+75% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+
+}
+
+/* Post Action Bar */
+
+.post-actions {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+padding: 10px 2px 8px;
+
+}
+
+.post-actions-left {
+
+display: flex;
+
+align-items: center;
+
+gap: 16px;
+
+}
+
+.action-icon-btn {
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+transition: transform 0.15s ease, opacity 0.15s ease;
+
+}
+
+.action-icon-btn:hover {
+
+opacity: 0.65;
+
+}
+
+.action-icon-btn:active {
+
+transform: scale(0.85);
+
+}
+
+.action-icon-btn.liked svg {
+
+fill: var(--heart-red);
+
+stroke: var(--heart-red);
+
+animation: likeBounce 0.3s ease;
+
+}
+
+.action-icon-btn.saved svg {
+
+fill: var(--text-primary);
+
+}
+
+@keyframes likeBounce {
+
+0% { transform: scale(1); }
+
+50% { transform: scale(1.28); }
+
+100% { transform: scale(1); }
+
+}
+
+.post-likes-count {
+
+font-size: 14px;
+
+font-weight: 600;
+
+margin-bottom: 6px;
+
+cursor: pointer;
+
+}
+
+.post-caption {
+
+font-size: 14px;
+
+line-height: 1.42;
+
+margin-bottom: 6px;
+
+}
+
+.post-caption .caption-user {
+
+font-weight: 600;
+
+margin-right: 5px;
+
+cursor: pointer;
+
+}
+
+.hashtag-link {
+
+color: #00376b;
+
+cursor: pointer;
+
+}
+
+body.dark-mode .hashtag-link {
+
+color: #e0f1ff;
+
+}
+
+.view-comments-btn {
+
+font-size: 14px;
+
+color: var(--text-secondary);
+
+margin-bottom: 6px;
+
+display: block;
+
+}
+
+.post-comments-preview {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 4px;
+
+margin-bottom: 8px;
+
+}
+
+.comment-line {
+
+font-size: 14px;
+
+line-height: 1.35;
+
+display: flex;
+
+justify-content: space-between;
+
+align-items: flex-start;
+
+}
+
+.comment-line strong {
+
+font-weight: 600;
+
+margin-right: 5px;
+
+}
+
+.add-comment-box {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+margin-top: 6px;
+
+}
+
+.add-comment-input {
+
+flex: 1;
+
+font-size: 14px;
+
+padding: 4px 0;
+
+}
+
+.add-comment-input::placeholder {
+
+color: var(--text-secondary);
+
+}
+
+.post-comment-submit {
+
+color: var(--accent-blue);
+
+font-weight: 600;
+
+font-size: 14px;
+
+opacity: 0.4;
+
+pointer-events: none;
+
+transition: opacity var(--transition-fast);
+
+}
+
+.post-comment-submit.ready {
+
+opacity: 1;
+
+pointer-events: auto;
+
+}
+
+/* Right Suggestions Rail (Desktop Only) */
+
+.right-rail {
+
+width: 319px;
+
+padding-top: 12px;
+
+flex-shrink: 0;
+
+}
+
+.rail-user-row {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+margin-bottom: 20px;
+
+}
+
+.rail-user-left {
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+cursor: pointer;
+
+}
+
+.rail-avatar-lg {
+
+width: 44px;
+
+height: 44px;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+}
+
+.rail-avatar-sm {
+
+width: 38px;
+
+height: 38px;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+}
+
+.rail-names {
+
+display: flex;
+
+flex-direction: column;
+
+}
+
+.rail-username {
+
+font-size: 14px;
+
+font-weight: 600;
+
+}
+
+.rail-subtext {
+
+font-size: 13px;
+
+color: var(--text-secondary);
+
+}
+
+.rail-action-btn {
+
+font-size: 12px;
+
+font-weight: 600;
+
+color: var(--accent-blue);
+
+}
+
+.rail-action-btn:hover {
+
+color: var(--text-primary);
+
+}
+
+.rail-action-btn.following {
+
+color: var(--text-primary);
+
+}
+
+.rail-header {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+margin-bottom: 14px;
+
+}
+
+.rail-header span {
+
+font-size: 14px;
+
+font-weight: 600;
+
+color: var(--text-secondary);
+
+}
+
+.rail-header button {
+
+font-size: 12px;
+
+font-weight: 600;
+
+}
+
+.suggestions-list {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 14px;
+
+margin-bottom: 28px;
+
+}
+
+.rail-footer {
+
+font-size: 12px;
+
+color: var(--text-muted);
+
+line-height: 1.6;
+
+}
+
+/* --- EXPLORE VIEW --- */
+
+.explore-layout {
+
+flex-direction: column;
+
+width: 100%;
+
+max-width: 975px;
+
+padding: 20px 16px 70px;
+
+margin: 0 auto;
+
+}
+
+.explore-search-bar {
+
+display: flex;
+
+align-items: center;
+
+background-color: var(--bg-input);
+
+border-radius: 8px;
+
+padding: 8px 14px;
+
+margin-bottom: 16px;
+
+gap: 10px;
+
+}
+
+.explore-search-bar input {
+
+flex: 1;
+
+font-size: 15px;
+
+}
+
+.explore-tags {
+
+display: flex;
+
+gap: 8px;
+
+overflow-x: auto;
+
+padding-bottom: 16px;
+
+}
+
+.tag-pill {
+
+padding: 7px 16px;
+
+border-radius: 8px;
+
+background-color: var(--bg-input);
+
+font-size: 13px;
+
+font-weight: 600;
+
+white-space: nowrap;
+
+transition: background-color var(--transition-fast);
+
+}
+
+.tag-pill.active {
+
+background-color: var(--text-primary);
+
+color: var(--bg-primary);
+
+}
+
+.explore-grid {
+
+display: grid;
+
+grid-template-columns: repeat(3, 1fr);
+
+gap: 4px;
+
+}
+
+.grid-tile {
+
+position: relative;
+
+aspect-ratio: 1 / 1;
+
+background-color: var(--bg-secondary);
+
+overflow: hidden;
+
+cursor: pointer;
+
+}
+
+.grid-tile img {
+
+width: 100%;
+
+height: 100%;
+
+object-fit: cover;
+
+transition: transform 0.3s ease;
+
+}
+
+.grid-tile:hover img {
+
+transform: scale(1.03);
+
+}
+
+.grid-overlay {
+
+position: absolute;
+
+inset: 0;
+
+background: rgba(0, 0, 0, 0.35);
+
+color: #fff;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+gap: 22px;
+
+font-weight: 700;
+
+font-size: 15px;
+
+opacity: 0;
+
+transition: opacity var(--transition-fast);
+
+}
+
+.grid-tile:hover .grid-overlay {
+
+opacity: 1;
+
+}
+
+.grid-stat {
+
+display: flex;
+
+align-items: center;
+
+gap: 6px;
+
+}
+
+.tile-badge-icon {
+
+position: absolute;
+
+top: 10px;
+
+right: 10px;
+
+color: #fff;
+
+filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+
+}
+
+/* --- REELS VIEW --- */
+
+.reels-layout {
+
+justify-content: center;
+
+align-items: flex-start;
+
+padding: 16px 0 60px;
+
+width: 100%;
+
+}
+
+.reels-feed {
+
+height: calc(100vh - 40px);
+
+max-height: 820px;
+
+width: 100%;
+
+max-width: 410px;
+
+overflow-y: scroll;
+
+scroll-snap-type: y mandatory;
+
+border-radius: 12px;
+
+}
+
+.reel-card {
+
+position: relative;
+
+width: 100%;
+
+height: 100%;
+
+scroll-snap-align: start;
+
+scroll-snap-stop: always;
+
+background-color: #111;
+
+overflow: hidden;
+
+display: flex;
+
+align-items: flex-end;
+
+}
+
+.reel-bg-media {
+
+position: absolute;
+
+inset: 0;
+
+width: 100%;
+
+height: 100%;
+
+object-fit: cover;
+
+animation: slowZoom 14s ease-in-out infinite alternate;
+
+}
+
+@keyframes slowZoom {
+
+0% { transform: scale(1); }
+
+100% { transform: scale(1.08); }
+
+}
+
+.reel-gradient {
+
+position: absolute;
+
+inset: 0;
+
+background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.2) 100%);
+
+pointer-events: none;
+
+}
+
+.reel-bottom-info {
+
+position: relative;
+
+z-index: 5;
+
+padding: 20px 68px 22px 16px;
+
+color: #fff;
+
+width: 100%;
+
+}
+
+.reel-user-row {
+
+display: flex;
+
+align-items: center;
+
+gap: 10px;
+
+margin-bottom: 10px;
+
+}
+
+.reel-user-row img {
+
+width: 34px;
+
+height: 34px;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+border: 1.5px solid #fff;
+
+}
+
+.reel-follow-pill {
+
+border: 1px solid rgba(255,255,255,0.7);
+
+padding: 3px 10px;
+
+border-radius: 6px;
+
+font-size: 12px;
+
+font-weight: 600;
+
+color: #fff;
+
+margin-left: 4px;
+
+}
+
+.reel-caption {
+
+font-size: 14px;
+
+line-height: 1.35;
+
+margin-bottom: 12px;
+
+}
+
+.reel-audio-pill {
+
+display: inline-flex;
+
+align-items: center;
+
+gap: 6px;
+
+background: rgba(255,255,255,0.18);
+
+backdrop-filter: blur(6px);
+
+padding: 5px 12px;
+
+border-radius: 20px;
+
+font-size: 12px;
+
+}
+
+.reel-side-actions {
+
+position: absolute;
+
+right: 12px;
+
+bottom: 22px;
+
+z-index: 6;
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+gap: 18px;
+
+color: #fff;
+
+}
+
+.reel-action-unit {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+gap: 4px;
+
+font-size: 12px;
+
+font-weight: 600;
+
+}
+
+.reel-disc {
+
+width: 30px;
+
+height: 30px;
+
+border-radius: 6px;
+
+border: 2px solid #fff;
+
+overflow: hidden;
+
+}
+
+/* --- DIRECT MESSAGES (CHAT) VIEW --- */
+
+.messages-layout {
+
+width: 100%;
+
+height: 100vh;
+
+background-color: var(--bg-primary);
+
+}
+
+.chat-sidebar {
+
+width: 350px;
+
+border-right: 1px solid var(--border-color);
+
+display: flex;
+
+flex-direction: column;
+
+height: 100%;
+
+}
+
+.chat-sidebar-header {
+
+padding: 20px 20px 14px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+border-bottom: 1px solid var(--border-subtle);
+
+}
+
+.chat-thread-list {
+
+flex: 1;
+
+overflow-y: auto;
+
+}
+
+.chat-thread-item {
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+padding: 12px 20px;
+
+cursor: pointer;
+
+transition: background-color var(--transition-fast);
+
+}
+
+.chat-thread-item:hover,
+
+.chat-thread-item.active {
+
+background-color: var(--bg-hover);
+
+}
+
+.chat-avatar-wrap {
+
+position: relative;
+
+width: 52px;
+
+height: 52px;
+
+flex-shrink: 0;
+
+}
+
+.chat-avatar-wrap img {
+
+width: 100%;
+
+height: 100%;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+}
+
+.online-indicator {
+
+position: absolute;
+
+bottom: 2px;
+
+right: 2px;
+
+width: 13px;
+
+height: 13px;
+
+border-radius: 50%;
+
+background-color: #1cd14f;
+
+border: 2.5px solid var(--bg-primary);
+
+}
+
+.chat-thread-info {
+
+flex: 1;
+
+min-width: 0;
+
+}
+
+.chat-thread-name {
+
+font-size: 14px;
+
+font-weight: 600;
+
+margin-bottom: 3px;
+
+}
+
+.chat-thread-preview {
+
+font-size: 13px;
+
+color: var(--text-secondary);
+
+white-space: nowrap;
+
+overflow: hidden;
+
+text-overflow: ellipsis;
+
+}
+
+.chat-window {
+
+flex: 1;
+
+display: flex;
+
+flex-direction: column;
+
+height: 100%;
+
+}
+
+.chat-window-header {
+
+height: 70px;
+
+padding: 0 20px;
+
+border-bottom: 1px solid var(--border-color);
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+}
+
+.chat-messages-area {
+
+flex: 1;
+
+overflow-y: auto;
+
+padding: 20px;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 10px;
+
+}
+
+.msg-bubble {
+
+max-width: 68%;
+
+padding: 10px 15px;
+
+border-radius: 20px;
+
+font-size: 14px;
+
+line-height: 1.4;
+
+word-wrap: break-word;
+
+}
+
+.msg-bubble.incoming {
+
+align-self: flex-start;
+
+background-color: var(--bg-input);
+
+color: var(--text-primary);
+
+border-bottom-left-radius: 4px;
+
+}
+
+.msg-bubble.outgoing {
+
+align-self: flex-end;
+
+background-color: #3797f0;
+
+color: #ffffff;
+
+border-bottom-right-radius: 4px;
+
+}
+
+.chat-input-bar {
+
+padding: 14px 20px;
+
+display: flex;
+
+align-items: center;
+
+}
+
+.chat-input-pill {
+
+flex: 1;
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+border: 1px solid var(--border-color);
+
+border-radius: 24px;
+
+padding: 9px 16px;
+
+}
+
+.chat-input-pill input {
+
+flex: 1;
+
+font-size: 14px;
+
+}
+
+/* --- PROFILE VIEW --- */
+
+.profile-layout {
+
+flex-direction: column;
+
+width: 100%;
+
+max-width: 935px;
+
+margin: 0 auto;
+
+padding: 30px 20px 70px;
+
+}
+
+.profile-header-section {
+
+display: flex;
+
+gap: 60px;
+
+align-items: center;
+
+margin-bottom: 36px;
+
+padding: 0 20px;
+
+}
+
+.profile-pic-container {
+
+width: 150px;
+
+height: 150px;
+
+border-radius: 50%;
+
+padding: 4px;
+
+background: var(--story-gradient);
+
+flex-shrink: 0;
+
+}
+
+.profile-pic-container img {
+
+width: 100%;
+
+height: 100%;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+border: 4px solid var(--bg-primary);
+
+}
+
+.profile-details {
+
+flex: 1;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 16px;
+
+}
+
+.profile-top-row {
+
+display: flex;
+
+align-items: center;
+
+gap: 16px;
+
+flex-wrap: wrap;
+
+}
+
+.profile-handle {
+
+font-size: 20px;
+
+font-weight: 400;
+
+}
+
+.btn-secondary {
+
+background-color: var(--bg-input);
+
+color: var(--text-primary);
+
+font-size: 14px;
+
+font-weight: 600;
+
+padding: 7px 16px;
+
+border-radius: 8px;
+
+transition: background-color var(--transition-fast);
+
+}
+
+.btn-secondary:hover {
+
+background-color: var(--border-color);
+
+}
+
+.btn-primary {
+
+background-color: var(--accent-blue);
+
+color: #ffffff;
+
+font-size: 14px;
+
+font-weight: 600;
+
+padding: 7px 20px;
+
+border-radius: 8px;
+
+}
+
+.btn-primary:hover {
+
+background-color: var(--accent-blue-hover);
+
+}
+
+.profile-stats-row {
+
+display: flex;
+
+gap: 36px;
+
+font-size: 16px;
+
+}
+
+.profile-stats-row strong {
+
+font-weight: 600;
+
+}
+
+.profile-bio-block {
+
+font-size: 14px;
+
+line-height: 1.45;
+
+}
+
+.profile-bio-name {
+
+font-weight: 600;
+
+}
+
+.profile-bio-link {
+
+color: #00376b;
+
+font-weight: 600;
+
+}
+
+body.dark-mode .profile-bio-link {
+
+color: #e0f1ff;
+
+}
+
+/* Story Highlights */
+
+.highlights-row {
+
+display: flex;
+
+gap: 32px;
+
+overflow-x: auto;
+
+padding: 0 24px 36px;
+
+border-bottom: 1px solid var(--border-color);
+
+}
+
+.highlight-item {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+gap: 8px;
+
+cursor: pointer;
+
+flex-shrink: 0;
+
+}
+
+.highlight-circle {
+
+width: 77px;
+
+height: 77px;
+
+border-radius: 50%;
+
+border: 1px solid var(--border-color);
+
+padding: 3px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+}
+
+.highlight-circle img {
+
+width: 100%;
+
+height: 100%;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+}
+
+.highlight-label {
+
+font-size: 12px;
+
+font-weight: 600;
+
+}
+
+/* Profile Tabs */
+
+.profile-tabs {
+
+display: flex;
+
+justify-content: center;
+
+gap: 54px;
+
+}
+
+.profile-tab-btn {
+
+display: flex;
+
+align-items: center;
+
+gap: 6px;
+
+padding: 16px 0;
+
+font-size: 12px;
+
+font-weight: 600;
+
+letter-spacing: 1px;
+
+color: var(--text-secondary);
+
+border-top: 1px solid transparent;
+
+margin-top: -1px;
+
+}
+
+.profile-tab-btn.active {
+
+color: var(--text-primary);
+
+border-top-color: var(--text-primary);
+
+}
+
+/*
+
+==========================================================================
+
+6. MODALS, DRAWERS & OVERLAYS (STORY VIEWER, CREATE POST, NOTIFICATIONS)
+
+==========================================================================
+
+*/
+
+.modal-backdrop {
+
+position: fixed;
+
+inset: 0;
+
+background: rgba(0, 0, 0, 0.72);
+
+z-index: 500;
+
+display: none;
+
+align-items: center;
+
+justify-content: center;
+
+padding: 16px;
+
+animation: fadeIn 0.18s ease;
+
+}
+
+.modal-backdrop.open {
+
+display: flex;
+
+}
+
+@keyframes fadeIn {
+
+from { opacity: 0; }
+
+to { opacity: 1; }
+
+}
+
+/* Create Post Modal */
+
+.create-modal-card {
+
+background-color: var(--bg-elevated);
+
+width: 100%;
+
+max-width: 520px;
+
+border-radius: 12px;
+
+overflow: hidden;
+
+box-shadow: var(--shadow-lg);
+
+border: 1px solid var(--border-color);
+
+}
+
+.modal-top-bar {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+padding: 12px 16px;
+
+border-bottom: 1px solid var(--border-color);
+
+font-weight: 600;
+
+font-size: 15px;
+
+}
+
+.create-body {
+
+padding: 20px;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 16px;
+
+}
+
+.upload-dropzone {
+
+border: 2px dashed var(--border-color);
+
+border-radius: 10px;
+
+padding: 28px 16px;
+
+text-align: center;
+
+cursor: pointer;
+
+transition: border-color var(--transition-fast);
+
+}
+
+.upload-dropzone:hover {
+
+border-color: var(--accent-blue);
+
+}
+
+.preset-thumbs {
+
+display: flex;
+
+gap: 8px;
+
+overflow-x: auto;
+
+padding-bottom: 4px;
+
+}
+
+.preset-thumb {
+
+width: 56px;
+
+height: 56px;
+
+border-radius: 6px;
+
+object-fit: cover;
+
+cursor: pointer;
+
+border: 2px solid transparent;
+
+flex-shrink: 0;
+
+}
+
+.preset-thumb.selected {
+
+border-color: var(--accent-blue);
+
+}
+
+.create-textarea {
+
+width: 100%;
+
+min-height: 80px;
+
+background-color: var(--bg-input);
+
+border-radius: 8px;
+
+padding: 10px 12px;
+
+font-size: 14px;
+
+resize: none;
+
+}
+
+.create-input {
+
+width: 100%;
+
+background-color: var(--bg-input);
+
+border-radius: 8px;
+
+padding: 10px 12px;
+
+font-size: 14px;
+
+}
+
+/* Fullscreen Story Viewer */
+
+.story-viewer-overlay {
+
+position: fixed;
+
+inset: 0;
+
+background-color: #111;
+
+z-index: 600;
+
+display: none;
+
+align-items: center;
+
+justify-content: center;
+
+}
+
+.story-viewer-overlay.open {
+
+display: flex;
+
+}
+
+.story-viewer-card {
+
+position: relative;
+
+width: 100%;
+
+max-width: 410px;
+
+height: 100%;
+
+max-height: 750px;
+
+background: #000;
+
+border-radius: 12px;
+
+overflow: hidden;
+
+display: flex;
+
+flex-direction: column;
+
+justify-content: space-between;
+
+}
+
+.story-progress-bars {
+
+position: relative;
+
+z-index: 10;
+
+display: flex;
+
+gap: 4px;
+
+padding: 12px 10px 8px;
+
+}
+
+.story-bar-track {
+
+flex: 1;
+
+height: 2.5px;
+
+background: rgba(255, 255, 255, 0.35);
+
+border-radius: 2px;
+
+overflow: hidden;
+
+}
+
+.story-bar-fill {
+
+height: 100%;
+
+width: 0%;
+
+background: #ffffff;
+
+}
+
+.story-viewer-header {
+
+position: relative;
+
+z-index: 10;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+padding: 4px 14px;
+
+color: #fff;
+
+}
+
+.story-viewer-media {
+
+position: absolute;
+
+inset: 0;
+
+width: 100%;
+
+height: 100%;
+
+object-fit: cover;
+
+}
+
+.story-tap-zones {
+
+position: absolute;
+
+inset: 60px 0 70px 0;
+
+z-index: 8;
+
+display: flex;
+
+}
+
+.story-tap-left, .story-tap-right {
+
+flex: 1;
+
+height: 100%;
+
+}
+
+.story-viewer-footer {
+
+position: relative;
+
+z-index: 10;
+
+padding: 14px;
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+
+}
+
+.story-reply-input {
+
+flex: 1;
+
+border: 1px solid rgba(255,255,255,0.65);
+
+border-radius: 22px;
+
+padding: 10px 16px;
+
+color: #fff;
+
+font-size: 14px;
+
+}
+
+.story-reply-input::placeholder {
+
+color: rgba(255,255,255,0.8);
+
+}
+
+/* Post Detail / Comments Modal */
+
+.detail-modal-card {
+
+background-color: var(--bg-elevated);
+
+width: 100%;
+
+max-width: 860px;
+
+max-height: 88vh;
+
+border-radius: 8px;
+
+overflow: hidden;
+
+display: flex;
+
+box-shadow: var(--shadow-lg);
+
+}
+
+.detail-media-pane {
+
+flex: 1.2;
+
+background: #000;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+}
+
+.detail-media-pane img {
+
+max-height: 88vh;
+
+width: 100%;
+
+object-fit: contain;
+
+}
+
+.detail-info-pane {
+
+flex: 1;
+
+display: flex;
+
+flex-direction: column;
+
+border-left: 1px solid var(--border-color);
+
+min-width: 320px;
+
+}
+
+.detail-comments-scroll {
+
+flex: 1;
+
+overflow-y: auto;
+
+padding: 16px;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 14px;
+
+}
+
+/* Notifications Drawer */
+
+.notif-drawer {
+
+position: fixed;
+
+top: 0;
+
+left: var(--sidebar-width);
+
+bottom: 0;
+
+width: 390px;
+
+background-color: var(--bg-primary);
+
+border-right: 1px solid var(--border-color);
+
+box-shadow: var(--shadow-md);
+
+z-index: 95;
+
+padding: 20px;
+
+overflow-y: auto;
+
+transform: translateX(-110%);
+
+transition: transform var(--transition-norm);
+
+}
+
+.notif-drawer.open {
+
+transform: translateX(0);
+
+}
+
+.notif-row {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+gap: 12px;
+
+padding: 10px 0;
+
+}
+
+.notif-row img.notif-user-pic {
+
+width: 44px;
+
+height: 44px;
+
+border-radius: 50%;
+
+object-fit: cover;
+
+flex-shrink: 0;
+
+}
+
+.notif-text {
+
+flex: 1;
+
+font-size: 13.5px;
+
+line-height: 1.35;
+
+}
+
+.notif-post-thumb {
+
+width: 44px;
+
+height: 44px;
+
+object-fit: cover;
+
+border-radius: 4px;
+
+}
+
+/* Toast Notification */
+
+.toast-banner {
+
+position: fixed;
+
+bottom: 70px;
+
+left: 50%;
+
+transform: translateX(-50%) translateY(20px);
+
+background-color: #262626;
+
+color: #fff;
+
+padding: 10px 20px;
+
+border-radius: 8px;
+
+font-size: 14px;
+
+font-weight: 500;
+
+opacity: 0;
+
+pointer-events: none;
+
+z-index: 999;
+
+transition: opacity 0.2s ease, transform 0.2s ease;
+
+box-shadow: var(--shadow-md);
+
+}
+
+.toast-banner.show {
+
+opacity: 1;
+
+transform: translateX(-50%) translateY(0);
+
+}
+
+/*
+
+==========================================================================
+
+7. RESPONSIVE BREAKPOINTS (TABLET & MOBILE)
+
+==========================================================================
+
+*/
+
+@media (max-width: 1160px) {
+
+.right-rail {
+
+display: none;
+
+}
+
+.sidebar {
+
+width: var(--sidebar-collapsed);
+
+align-items: center;
+
+}
+
+.sidebar-logo-text {
+
+display: none;
+
+}
+
+.sidebar-logo-icon {
+
+display: block;
+
+}
+
+.nav-item span {
+
+display: none;
+
+}
+
+.nav-item {
+
+justify-content: center;
+
+padding: 12px;
+
+}
+
+.main-stage {
+
+margin-left: var(--sidebar-collapsed);
+
+}
+
+.notif-drawer {
+
+left: var(--sidebar-collapsed);
+
+}
+
+}
+
+@media (max-width: 767px) {
+
+.sidebar {
+
+display: none;
+
+}
+
+.mobile-header {
+
+display: flex;
+
+}
+
+.mobile-bottom-nav {
+
+display: flex;
+
+}
+
+.main-stage {
+
+margin-left: 0;
+
+padding-top: var(--mobile-header-h);
+
+padding-bottom: var(--mobile-nav-h);
+
+}
+
+.home-layout {
+
+padding: 4px 0 20px;
+
+}
+
+.post-media-box {
+
+border-radius: 0;
+
+border-left: none;
+
+border-right: none;
+
+}
+
+.post-header, .post-actions, .post-likes-count, .post-caption, .view-comments-btn, .post-comments-preview, .add-comment-box {
+
+padding-left: 12px;
+
+padding-right: 12px;
+
+}
+
+.stories-container {
+
+padding-left: 10px;
+
+padding-right: 10px;
+
+}
+
+.profile-header-section {
+
+flex-direction: column;
+
+align-items: flex-start;
+
+gap: 20px;
+
+}
+
+.profile-pic-container {
+
+width: 86px;
+
+height: 86px;
+
+}
+
+.detail-modal-card {
+
+flex-direction: column;
+
+max-height: 92vh;
+
+}
+
+.detail-media-pane img {
+
+max-height: 45vh;
+
+}
+
+.notif-drawer {
+
+left: 0;
+
+width: 100%;
+
+top: var(--mobile-header-h);
+
+bottom: var(--mobile-nav-h);
+
+}
+
+.chat-sidebar {
+
+width: 100%;
+
+}
+
+.chat-window {
+
+display: none;
+
+}
+
+.messages-layout.chat-open .chat-sidebar {
+
+display: none;
+
+}
+
+.messages-layout.chat-open .chat-window {
+
+display: flex;
+
+}
+
+.reels-feed {
+
+height: calc(100vh - var(--mobile-header-h) - var(--mobile-nav-h));
+
+border-radius: 0;
+
+max-width: 100%;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!--
+
+========================================================================
+
+MOBILE TOP HEADER
+
+========================================================================
+
+-->
+
+<header class="mobile-header">
+
+<div class="brand-logo-text" onclick="switchView('home')">Instagram</div>
+
+<div class="mobile-header-actions">
+
+<button class="mobile-header-btn" onclick="toggleTheme()" title="Switch Theme">
+
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+
+</svg>
+
+</button>
+
+<button class="mobile-header-btn" onclick="toggleNotifications()" title="Notifications">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+
+</svg>
+
+<span class="badge-dot" id="mobileNotifDot"></span>
+
+</button>
+
+<button class="mobile-header-btn" onclick="switchView('messages')" title="Messages">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<line x1="22" y1="2" x2="11" y2="13"></line>
+
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+
+</svg>
+
+<span class="badge-count" id="mobileMsgBadge">2</span>
+
+</button>
+
+</div>
+
+</header>
+
+<!--
+
+========================================================================
+
+DESKTOP / TABLET LEFT SIDEBAR
+
+========================================================================
+
+-->
+
+<aside class="sidebar">
+
+<div class="sidebar-logo-wrap" onclick="switchView('home')">
+
+<span class="brand-logo-text sidebar-logo-text">Instagram</span>
+
+<svg class="sidebar-logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+
+<path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+
+<line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+
+</svg>
+
+</div>
+
+<nav class="nav-list">
+
+<button class="nav-item active" data-nav="home" onclick="switchView('home')">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+
+<polyline points="9 22 9 12 15 12 15 22"></polyline>
+
+</svg>
+
+<span>Home</span>
+
+</button>
+
+<button class="nav-item" data-nav="explore" onclick="switchView('explore')">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<circle cx="11" cy="11" r="8"></circle>
+
+<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+
+</svg>
+
+<span>Explore</span>
+
+</button>
+
+<button class="nav-item" data-nav="reels" onclick="switchView('reels')">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="2" y="2" width="20" height="20" rx="4"></rect>
+
+<polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon>
+
+</svg>
+
+<span>Reels</span>
+
+</button>
+
+<button class="nav-item" data-nav="messages" onclick="switchView('messages')">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<line x1="22" y1="2" x2="11" y2="13"></line>
+
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+
+</svg>
+
+<span>Messages</span>
+
+<span class="badge-count" id="desktopMsgBadge">2</span>
+
+</button>
+
+<button class="nav-item" data-nav="notifications" onclick="toggleNotifications()">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+
+</svg>
+
+<span>Notifications</span>
+
+<span class="badge-dot" id="desktopNotifDot"></span>
+
+</button>
+
+<button class="nav-item" onclick="openCreateModal()">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="3" y="3" width="18" height="18" rx="4"></rect>
+
+<line x1="12" y1="8" x2="12" y2="16"></line>
+
+<line x1="8" y1="12" x2="16" y2="12"></line>
+
+</svg>
+
+<span>Create</span>
+
+</button>
+
+<button class="nav-item" data-nav="profile" onclick="switchView('profile')">
+
+<img id="sidebarUserAvatar" class="nav-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80" alt="Profile" />
+
+<span>Profile</span>
+
+</button>
+
+</nav>
+
+<div>
+
+<button class="nav-item" onclick="toggleTheme()">
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<circle cx="12" cy="12" r="5"></circle>
+
+<line x1="12" y1="1" x2="12" y2="3"></line>
+
+<line x1="12" y1="21" x2="12" y2="23"></line>
+
+<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+
+<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+
+<line x1="1" y1="12" x2="3" y2="12"></line>
+
+<line x1="21" y1="12" x2="23" y2="12"></line>
+
+<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+
+<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+
+</svg>
+
+<span id="themeToggleLabel">Dark Mode</span>
+
+</button>
+
+</div>
+
+</aside>
+
+<!--
+
+========================================================================
+
+NOTIFICATIONS SLIDE DRAWER
+
+========================================================================
+
+-->
+
+<div class="notif-drawer" id="notifDrawer">
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+
+<h2 style="font-size:22px; font-weight:700;">Notifications</h2>
+
+<button onclick="toggleNotifications()" style="font-size:20px; padding:4px 8px;">✕</button>
+
+</div>
+
+<p style="font-size:14px; font-weight:600; margin-bottom:10px;">Today</p>
+
+<div id="notifListContainer"></div>
+
+</div>
+
+<!--
+
+========================================================================
+
+MAIN STAGE
+
+========================================================================
+
+-->
+
+<main class="main-stage">
+
+<!-- 1. HOME VIEW -->
+
+<section class="view-section active home-layout" id="view-home">
+
+<div class="feed-column">
+
+<!-- Stories Bar -->
+
+<div class="stories-container">
+
+<div class="stories-scroll no-scrollbar" id="storiesTray"></div>
+
+</div>
+
+<!-- Posts Feed -->
+
+<div id="feedPostsContainer"></div>
+
+</div>
+
+<!-- Right Suggestions Sidebar -->
+
+<aside class="right-rail">
+
+<div class="rail-user-row">
+
+<div class="rail-user-left" onclick="switchView('profile')">
+
+<img id="railCurrentUserImg" class="rail-avatar-lg" src="" alt="User">
+
+<div class="rail-names">
+
+<span class="rail-username" id="railCurrentUsername"></span>
+
+<span class="rail-subtext" id="railCurrentFullname"></span>
+
+</div>
+
+</div>
+
+<button class="rail-action-btn" onclick="openEditProfileModal()">Edit</button>
+
+</div>
+
+<div class="rail-header">
+
+<span>Suggested for you</span>
+
+<button onclick="showToast('Showing top creators')">See All</button>
+
+</div>
+
+<div class="suggestions-list" id="suggestionsContainer"></div>
+
+<div class="rail-footer">
+
+About · Help · Press · API · Jobs · Privacy · Terms · Locations · Language<br><br>
+
+© 2026 INSTAGRAM CLONE BY MOTION CRAFT
+
+</div>
+
+</aside>
+
+</section>
+
+<!-- 2. EXPLORE VIEW -->
+
+<section class="view-section explore-layout" id="view-explore">
+
+<div class="explore-search-bar">
+
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
+
+<circle cx="11" cy="11" r="8"></circle>
+
+<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+
+</svg>
+
+<input type="text" id="exploreSearchInput" placeholder="Search creators, tags, or captions..." oninput="renderExploreGrid()" />
+
+</div>
+
+<div class="explore-tags no-scrollbar" id="exploreCategoryPills">
+
+<button class="tag-pill active" onclick="filterExploreCategory('all', this)">For You</button>
+
+<button class="tag-pill" onclick="filterExploreCategory('travel', this)">Travel</button>
+
+<button class="tag-pill" onclick="filterExploreCategory('tech', this)">Tech & Setup</button>
+
+<button class="tag-pill" onclick="filterExploreCategory('art', this)">Photography</button>
+
+<button class="tag-pill" onclick="filterExploreCategory('food', this)">Food</button>
+
+<button class="tag-pill" onclick="filterExploreCategory('gaming', this)">Gaming</button>
+
+</div>
+
+<div class="explore-grid" id="exploreGridContainer"></div>
+
+</section>
+
+<!-- 3. REELS VIEW -->
+
+<section class="view-section reels-layout" id="view-reels">
+
+<div class="reels-feed no-scrollbar" id="reelsFeedContainer"></div>
+
+</section>
+
+<!-- 4. MESSAGES VIEW -->
+
+<section class="view-section messages-layout" id="view-messages">
+
+<div class="chat-sidebar">
+
+<div class="chat-sidebar-header">
+
+<span style="font-size:18px; font-weight:700;" id="chatHeaderUsername">nirav_rokde</span>
+
+<button onclick="showToast('New message composer ready')" title="New Message">
+
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+
+<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+
+</svg>
+
+</button>
+
+</div>
+
+<div class="chat-thread-list" id="chatThreadsContainer"></div>
+
+</div>
+
+<div class="chat-window" id="chatWindowPane">
+
+<div class="chat-window-header">
+
+<div style="display:flex; align-items:center; gap:12px;">
+
+<button onclick="closeMobileChat()" style="font-size:18px; padding-right:4px;" id="mobileBackChatBtn">←</button>
+
+<img id="activeChatAvatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;" alt="">
+
+<div>
+
+<div style="font-weight:600; font-size:15px;" id="activeChatName">Select a chat</div>
+
+<div style="font-size:12px; color:var(--text-secondary);" id="activeChatStatus">Active now</div>
+
+</div>
+
+</div>
+
+<div style="display:flex; gap:16px;">
+
+<button onclick="showToast('Starting voice call...')">
+
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45
+
+2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+
+</svg>
+
+</button>
+
+<button onclick="showToast('Starting video call...')">
+
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<polygon points="23 7 16 12 23 17 23 7"></polygon>
+
+<rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+
+</svg>
+
+</button>
+
+</div>
+
+</div>
+
+<div class="chat-messages-area" id="chatMessagesArea"></div>
+
+<form class="chat-input-bar" onsubmit="sendChatMessage(event)">
+
+<div class="chat-input-pill">
+
+<span style="font-size:20px; cursor:pointer;" onclick="appendChatEmoji('   🔥')">😊</span> <input type="text" id="chatMessageInput" placeholder="Message..." autocomplete="off" />
+
+<button type="submit" style="color:var(--accent-blue); font-weight:600; font-size:14px;">Send</button>
+
+</div>
+
+</form>
+
+</div>
+
+</section>
+
+<!-- 5. PROFILE VIEW -->
+
+<section class="view-section profile-layout" id="view-profile">
+
+<div class="profile-header-section">
+
+<div class="profile-pic-container">
+
+<img id="profileMainAvatar" src="" alt="Profile Picture">
+
+</div>
+
+<div class="profile-details">
+
+<div class="profile-top-row">
+
+<h2 class="profile-handle" id="profileMainHandle">nirav_rokde</h2>
+
+<button class="btn-secondary" onclick="openEditProfileModal()">Edit profile</button>
+
+<button class="btn-secondary" onclick="shareProfileLink()">Share profile</button>
+
+</div>
+
+<div class="profile-stats-row">
+
+<span><strong id="profilePostsCount">0</strong> posts</span>
+
+<span><strong id="profileFollowersCount">1,420</strong> followers</span>
+
+<span><strong id="profileFollowingCount">318</strong> following</span>
+
+</div>
+
+<div class="profile-bio-block">
+
+<div class="profile-bio-name" id="profileFullName">Nirav Rokde</div>
+
+<div id="profileBioText" style="white-space: pre-line; margin: 4px 0;"></div>
+
+<a href="https://niravrokde.netlify.app" target="_blank" class="profile-bio-link" id="profileWebsiteLink">niravrokde.netlify.app</a>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Story Highlights -->
+
+<div class="highlights-row no-scrollbar" id="profileHighlightsRow"></div>
+
+<!-- Profile Tabs -->
+
+<div class="profile-tabs">
+
+<button class="profile-tab-btn active" id="tabPostsBtn" onclick="switchProfileTab('posts')">
+
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="3" y="3" width="7" height="7"></rect>
+
+<rect x="14" y="3" width="7" height="7"></rect>
+
+<rect x="14" y="14" width="7" height="7"></rect>
+
+<rect x="3" y="14" width="7" height="7"></rect>
+
+</svg>
+
+POSTS
+
+</button>
+
+<button class="profile-tab-btn" id="tabSavedBtn" onclick="switchProfileTab('saved')">
+
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+
+</svg>
+
+SAVED
+
+</button>
+
+</div>
+
+<!-- Profile Grid -->
+
+<div class="explore-grid" id="profileGridContainer" style="margin-top:4px;"></div>
+
+</section>
+
+</main>
+
+<!--
+
+========================================================================
+
+MOBILE BOTTOM NAVIGATION
+
+========================================================================
+
+-->
+
+<nav class="mobile-bottom-nav">
+
+<button class="mobile-nav-btn" onclick="switchView('home')">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+
+<polyline points="9 22 9 12 15 12 15 22"></polyline>
+
+</svg>
+
+</button>
+
+<button class="mobile-nav-btn" onclick="switchView('explore')">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<circle cx="11" cy="11" r="8"></circle>
+
+<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+
+</svg>
+
+</button>
+
+<button class="mobile-nav-btn" onclick="openCreateModal()">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="3" y="3" width="18" height="18" rx="4"></rect>
+
+<line x1="12" y1="8" x2="12" y2="16"></line>
+
+<line x1="8" y1="12" x2="16" y2="12"></line>
+
+</svg>
+
+</button>
+
+<button class="mobile-nav-btn" onclick="switchView('reels')">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<rect x="2" y="2" width="20" height="20" rx="4"></rect>
+
+<polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon>
+
+</svg>
+
+</button>
+
+<button class="mobile-nav-btn" onclick="switchView('profile')">
+
+<img id="mobileNavAvatar" class="nav-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80" alt="Me" />
+
+</button>
+
+</nav>
+
+<!--
+
+========================================================================
+
+CREATE NEW POST MODAL
+
+========================================================================
+
+-->
+
+<div class="modal-backdrop" id="createPostModal" onclick="if(event.target===this) closeCreateModal()">
+
+<div class="create-modal-card">
+
+<div class="modal-top-bar">
+
+<button onclick="closeCreateModal()" style="font-size:14px;">Cancel</button>
+
+<span>Create new post</span>
+
+<button onclick="publishNewPost()" style="color:var(--accent-blue); font-weight:700; font-size:14px;">Share</button>
+
+</div>
+
+<div class="create-body">
+
+<label class="upload-dropzone" for="localImageFile">
+
+<div style="font-size:32px; margin-bottom:6px;">   📸</div> <div style="font-weight:600; font-size:14px; margin-bottom:4px;">Select photo from device</div>
+
+<div style="font-size:12px; color:var(--text-secondary);">Or pick a ready-to-use aesthetic photo below</div>
+
+<input type="file" id="localImageFile" accept="image/*" style="display:none;" onchange="handleLocalImageUpload(event)">
+
+</label>
+
+<div>
+
+<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Quick Aesthetic Presets:</div>
+
+<div class="preset-thumbs" id="presetThumbsRow"></div>
+
+</div>
+
+<img id="createPreviewImg" src="" style="width:100%; max-height:220px; object-fit:cover; border-radius:8px; display:none;" alt="Preview">
+
+<textarea class="create-textarea" id="newPostCaption" placeholder="Write a caption... (use #hashtags)"></textarea>
+
+<input type="text" class="create-input" id="newPostLocation" placeholder="Add location (e.g. Nagpur, Maharashtra)">
+
+</div>
+
+</div>
+
+</div>
+
+<!--
+
+========================================================================
+
+EDIT PROFILE MODAL
+
+========================================================================
+
+-->
+
+<div class="modal-backdrop" id="editProfileModal" onclick="if(event.target===this) closeEditProfileModal()">
+
+<div class="create-modal-card">
+
+<div class="modal-top-bar">
+
+<button onclick="closeEditProfileModal()" style="font-size:14px;">Cancel</button>
+
+<span>Edit profile</span>
+
+<button onclick="saveProfileEdits()" style="color:var(--accent-blue); font-weight:700; font-size:14px;">Done</button>
+
+</div>
+
+<div class="create-body">
+
+<div>
+
+<label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Name</label>
+
+<input type="text" class="create-input" id="editNameInput" style="margin-top:4px;">
+
+</div>
+
+<div>
+
+<label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Username</label>
+
+<input type="text" class="create-input" id="editUsernameInput" style="margin-top:4px;">
+
+</div>
+
+<div>
+
+<label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Bio</label>
+
+<textarea class="create-textarea" id="editBioInput" style="margin-top:4px;"></textarea>
+
+</div>
+
+<div>
+
+<label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Website</label>
+
+<input type="text" class="create-input" id="editWebsiteInput" style="margin-top:4px;">
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!--
+
+========================================================================
+
+POST DETAIL MODAL (FOR EXPLORE & PROFILE CLICKS)
+
+========================================================================
+
+-->
+
+<div class="modal-backdrop" id="postDetailModal" onclick="if(event.target===this) closePostDetailModal()">
+
+<div class="detail-modal-card" id="postDetailContent"></div>
+
+</div>
+
+<!--
+
+========================================================================
+
+FULLSCREEN STORY VIEWER
+
+========================================================================
+
+-->
+
+<div class="story-viewer-overlay" id="storyViewerOverlay">
+
+<div class="story-viewer-card">
+
+<div>
+
+<div class="story-progress-bars" id="storyProgressBars"></div>
+
+<div class="story-viewer-header">
+
+<div style="display:flex; align-items:center; gap:10px;">
+
+<img id="storyViewerAvatar" src="" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
+
+<span id="storyViewerUser" style="font-weight:600; font-size:14px;"></span>
+
+<span id="storyViewerTime" style="font-size:12px; opacity:0.75;">2h</span>
+
+</div>
+
+<button onclick="closeStoryViewer()" style="color:#fff; font-size:22px; padding:4px 8px;">✕</button>
+
+</div>
+
+</div>
+
+<img id="storyViewerImage" class="story-viewer-media" src="" alt="Story">
+
+<div class="story-tap-zones">
+
+<div class="story-tap-left" onclick="prevStorySlide()"></div>
+
+<div class="story-tap-right" onclick="nextStorySlide()"></div>
+
+</div>
+
+<form class="story-viewer-footer" onsubmit="sendStoryReply(event)">
+
+<input type="text" class="story-reply-input" id="storyReplyInput" placeholder="Send message..." />
+
+<button type="button" onclick="showToast('           ❤️ Sent story reaction!')" style="font-size:22px;">❤️ </button>
+
+<button type="submit" style="color:#fff; font-weight:600; font-size:14px;">Send</button>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- Toast Banner -->
+
+<div class="toast-banner" id="toastBanner"></div>
+
+<!--
+
+========================================================================
+
+JAVASCRIPT APPLICATION LOGIC & STATE ENGINE
+
+========================================================================
+
+-->
+
+<script>
+
+/* ------------------------------------------------------------------------
+
+1. INITIAL SEED DATA & STATE
+
+------------------------------------------------------------------------ */
+
+const PRESET_IMAGES = [
+
+"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&q=80",
+
+"https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=80",
+
+"https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=900&q=80",
+
+"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=900&q=80",
+
+"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=900&q=80",
+
+"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=900&q=80"
+
+];
+
+const DEFAULT_STATE = {
+
+currentUser: {
+
+username: "nirav_rokde",
+
+fullName: "Nirav Rokde",
+
+avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80",
+
+bio: "Creator • Motion Craft Team    🎬\nYouTube: NX LEJEND 435 🎮\nApni kahani, apni zubaani ✨", website: "niravrokde.netlify.app",
+
+followers: 1420,
+
+following: 318
+
+},
+
+stories: [
+
+{
+
+id: "s0",
+
+username: "Your story",
+
+avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80",
+
+isOwn: true,
+
+seen: false,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80", time: "1h" }
+
+]
+
+},
+
+{
+
+id: "s1",
+
+username: "motion_craft",
+
+avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&q=80",
+
+seen: false,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&q=80", time: "2h" },
+
+{ img: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&q=80", time: "1h" }
+
+]
+
+},
+
+{
+
+id: "s2",
+
+username: "aarav.dev",
+
+avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+
+seen: false,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80", time: "3h" }
+
+]
+
+},
+
+{
+
+id: "s3",
+
+username: "priya_vlogs",
+
+avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+
+seen: false,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80", time: "4h" }
+
+]
+
+},
+
+{
+
+id: "s4",
+
+username: "rohan_gamer",
+
+avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+
+seen: false,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80", time: "5h" }
+
+]
+
+},
+
+{
+
+id: "s5",
+
+username: "diya.art",
+
+avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80",
+
+seen: true,
+
+slides: [
+
+{ img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80", time: "7h" }
+
+]
+
+}
+
+],
+
+posts: [
+
+{
+
+id: "p1",
+
+username: "nirav_rokde",
+
+userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80",
+
+verified: true,
+
+location: "Nagpur, Maharashtra",
+
+timeAgo: "2h",
+
+category: "tech",
+
+image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=900&q=80",
+
+likes: 348,
+
+liked: false,
+
+saved: true,
+
+caption: "Abhi toh shuruaat hai, manzil abhi door hai   ✨ Building new web projects & edits with #MotionCraftTeam #WebDev #NXLejend435",
+
+comments: [
+
+{ user: "sumit_09", text: "Bhai setup ekdum fire lag raha hai!   🔥" }, { user: "aarav.dev", text: "Clean UI work bro   💯" } ]
+
+},
+
+{
+
+id: "p2",
+
+username: "priya_vlogs",
+
+userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+
+verified: true,
+
+location: "Marine Drive, Mumbai",
+
+timeAgo: "5h",
+
+category: "travel",
+
+image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=80",
+
+likes: 1294,
+
+liked: true,
+
+saved: false,
+
+caption: "Golden hour hits differently by the ocean waves   🌊☀️ #SunsetVibes #TravelIndia #Aesthetic",
+
+comments: [
+
+{ user: "diya.art", text: "Those colors are unreal   😍" } ]
+
+},
+
+{
+
+id: "p3",
+
+username: "rohan_gamer",
+
+userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+
+verified: false,
+
+location: "Esports Arena",
+
+timeAgo: "8h",
+
+category: "gaming",
+
+image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=900&q=80",
+
+likes: 876,
+
+liked: false,
+
+saved: false,
+
+caption: "Late night tournament grind! Who is ready for the next custom room?   🎮🏆 #GamingSetup #Esports #Booyah",
+
+comments: [
+
+{ user: "nirav_rokde", text: "Let's gooo! Custom match tonight   🔥" }, { user: "kabir_yt", text: "OP montage incoming!" }
+
+]
+
+},
+
+{
+
+id: "p4",
+
+username: "diya.art",
+
+userAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80",
+
+verified: false,
+
+location: "Studio Workspace",
+
+timeAgo: "1d",
+
+category: "art",
+
+image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&q=80",
+
+likes: 642,
+
+liked: false,
+
+saved: true,
+
+caption: "Abstract 3D fluid renders experimenting with neon lighting   🎨✨ #DigitalArt #3DDesign #Creative",
+
+comments: []
+
+}
+
+],
+
+exploreExtras: [
+
+{
+
+id: "e1",
+
+username: "mountain_explorer",
+
+userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+
+verified: true,
+
+location: "Manali, Himachal",
+
+timeAgo: "1d",
+
+category: "travel",
+
+image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=900&q=80",
+
+likes: 4510,
+
+liked: false,
+
+saved: false,
+
+caption: "Silence in the valley speaks louder than words   🏔️ #Nature #Mountains", comments: []
+
+},
+
+{
+
+id: "e2",
+
+username: "chef_arjun",
+
+userAvatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&q=80",
+
+verified: false,
+
+location: "Pune",
+
+timeAgo: "2d",
+
+category: "food",
+
+image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&q=80",
+
+likes: 920,
+
+liked: false,
+
+saved: false,
+
+caption: "Wood-fired perfection straight out of the oven   🍕🔥 #Foodie #PizzaLovers", comments: []
+
+},
+
+{
+
+id: "e3",
+
+username: "cyber_circuits",
+
+userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+
+verified: true,
+
+location: "Bengaluru",
+
+timeAgo: "3d",
+
+category: "tech",
+
+image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=80",
+
+likes: 2130,
+
+liked: false,
+
+saved: false,
+
+caption: "Inside the architecture of modern processors   ⚡ #Tech #Hardware", comments: []
+
+},
+
+{
+
+id: "e4",
+
+username: "neon_arcade",
+
+userAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+
+verified: false,
+
+location: "Tokyo",
+
+timeAgo: "4d",
+
+category: "gaming",
+
+image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=900&q=80",
+
+likes: 3340,
+
+liked: false,
+
+saved: false,
+
+caption: "Retro arcade nights under neon lights   🕹️💜 #Arcade #Cyberpunk", comments: []
+
+},
+
+{
+
+id: "e5",
+
+username: "lens_craft",
+
+userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+
+verified: true,
+
+location: "Jaipur",
+
+timeAgo: "5d",
+
+category: "art",
+
+image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=900&q=80",
+
+likes: 1890,
+
+liked: false,
+
+saved: false,
+
+caption: "Framing the world through vintage glass   📷 #Photography #StreetShot", comments: []
+
+}
+
+],
+
+reels: [
+
+{
+
+id: "r1",
+
+username: "nirav_rokde",
+
+avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80",
+
+image: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&q=80",
+
+caption: "Raat 3 Baje Horror Edit   👻🔥 Velocity + Screen Shake on CapCut! #MotionCraftTeam #Edit",
+
+audio: "Original Audio - NX LEJEND 435",
+
+likes: 4820,
+
+commentsCount: 142,
+
+liked: false
+
+},
+
+{
+
+id: "r2",
+
+username: "aarav.dev",
+
+avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+
+image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+
+caption: "3 CSS tricks every web developer should know in 2026   💻✨ #Coding #WebDesign", audio: "Lo-Fi Beats • Coding Chill",
+
+likes: 9120,
+
+commentsCount: 310,
+
+liked: true
+
+},
+
+{
+
+id: "r3",
+
+username: "priya_vlogs",
+
+avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+
+image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
+
+caption: "Waking up above the clouds   ☁️⛰️ Save this spot for your next trip! #TravelReels", audio: "Khoya Hain (Instrumental) • Trending",
+
+likes: 15400,
+
+commentsCount: 428,
+
+liked: false
+
+}
+
+],
+
+suggestions: [
+
+{ username: "motion_craft", subtitle: "Followed by sumit_09 + 4 more", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&q=80", following: false },
+
+{ username: "nx_lejend_435", subtitle: "Popular creator", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80", following: false },
+
+{ username: "sneha.clicks", subtitle: "New to Instagram", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80", following: false },
+
+{ username: "pranay_official", subtitle: "Suggested for you", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80", following: false }
+
+],
+
+highlights: [
+
+{ title: "Edits   🎬", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=200&q=80" },
+
+{ title: "Gaming     🎮", img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&q=80" },
+
+{ title: "Projects   💻", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=200&q=80" },
+
+{ title: "Trophy   🏆", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=200&q=80" }
+
+],
+
+chats: [
+
+{
+
+id: "c1",
+
+username: "motion_craft",
+
+fullName: "Motion Craft Team",
+
+avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&q=80",
+
+online: true,
+
+unread: true,
+
+messages: [
+
+{ from: "them", text: "Bhai naya video edit ready ho gaya kya?   🎬" }, { from: "me", text: "Haan, bas velocity sync aur thumbnail final kar raha hoon!" },
+
+{ from: "them", text: "Ek number! Aaj shaam 7 baje upload karte hain     🔥" } ]
+
+},
+
+{
+
+id: "c2",
+
+username: "aarav.dev",
+
+fullName: "Aarav Sharma",
+
+avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+
+online: true,
+
+unread: true,
+
+messages: [
+
+{ from: "them", text: "Bro teri IAM NIRAV website dekhi, neon look mast hai   😎" }, { from: "me", text: "Thanks bhai! Abhi aur naye features add karne wala hoon." }
+
+]
+
+},
+
+{
+
+id: "c3",
+
+username: "priya_vlogs",
+
+fullName: "Priya Verma",
+
+avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+
+online: false,
+
+unread: false,
+
+messages: [
+
+{ from: "them", text: "Collab reel ke liye audio bhej do!" }
+
+]
+
+}
+
+],
+
+notifications: [
+
+{ user: "sumit_09", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80", action: "liked your post.", time: "14m", postImg: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=150&q=80" },
+
+{ user: "aarav.dev", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80", action: "commented: \"Clean UI work bro     💯\"", time: "42m", postImg: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=150&q=80" },
+
+{ user: "diya.art", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80", action: "started following you.", time: "2h", postImg: null },
+
+{ user: "rohan_gamer", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&q=80", action: "liked your reel.", time: "5h", postImg: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=150&q=80" }
+
+]
+
+};
+
+let appState = JSON.parse(localStorage.getItem("insta_clone_state_v1")) || DEFAULT_STATE;
+
+let currentExploreCategory = "all";
+
+let currentProfileTab = "posts";
+
+let activeChatId = appState.chats[0].id;
+
+let selectedNewPostImg = PRESET_IMAGES[0];
+
+// Story Viewer Variables
+
+let activeStoryUserIdx = 0;
+
+let activeStorySlideIdx = 0;
+
+let storyTimer = null;
+
+function saveState() {
+
+try {
+
+localStorage.setItem("insta_clone_state_v1", JSON.stringify(appState));
+
+} catch (e) {
+
+console.warn("Storage quota exceeded, keeping state in memory.");
+
+}
+
+}
+
+/* ------------------------------------------------------------------------
+
+2. NAVIGATION & THEME CONTROLS
+
+------------------------------------------------------------------------ */
+
+function switchView(viewName) {
+
+// Close notifications drawer if open
+
+document.getElementById("notifDrawer").classList.remove("open");
+
+// Update active section
+
+document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
+
+const target = document.getElementById("view-" + viewName);
+
+if (target) target.classList.add("active");
+
+// Update sidebar active link
+
+document.querySelectorAll(".nav-item").forEach(btn => {
+
+btn.classList.toggle("active", btn.dataset.nav === viewName);
+
+});
+
+// Render specific views on demand
+
+if (viewName === "home") {
+
+renderStories();
+
+renderFeed();
+
+renderSuggestions();
+
+} else if (viewName === "explore") {
+
+renderExploreGrid();
+
+} else if (viewName === "reels") {
+
+renderReels();
+
+} else if (viewName === "messages") {
+
+renderChatThreads();
+
+renderActiveChat();
+
+} else if (viewName === "profile") {
+
+renderProfile();
+
+}
+
+window.scrollTo({ top: 0, behavior: "instant" });
+
+}
+
+function toggleTheme() {
+
+document.body.classList.toggle("dark-mode");
+
+const isDark = document.body.classList.contains("dark-mode");
+
+document.getElementById("themeToggleLabel").textContent = isDark ? "Light Mode" : "Dark Mode";
+
+localStorage.setItem("insta_dark_mode", isDark ? "1" : "0");
+
+}
+
+function toggleNotifications() {
+
+const drawer = document.getElementById("notifDrawer");
+
+drawer.classList.toggle("open");
+
+if (drawer.classList.contains("open")) {
+
+document.getElementById("desktopNotifDot").style.display = "none";
+
+document.getElementById("mobileNotifDot").style.display = "none";
+
+renderNotifications();
+
+}
+
+}
+
+function showToast(msg) {
+
+const el = document.getElementById("toastBanner");
+
+el.textContent = msg;
+
+el.classList.add("show");
+
+clearTimeout(el._t);
+
+el._t = setTimeout(() => el.classList.remove("show"), 2400);
+
+}
+
+/* ------------------------------------------------------------------------
+
+3. FORMATTERS & SVG HELPERS
+
+------------------------------------------------------------------------ */
+
+function formatCaptionWithHashtags(text) {
+
+return text.replace(/(#[a-zA-Z0-9_]+)/g, '<span class="hashtag-link" onclick="searchByTag(\'$1\')">$1</span>');
+
+}
+
+function searchByTag(tag) {
+
+switchView("explore");
+
+const input = document.getElementById("exploreSearchInput");
+
+input.value = tag;
+
+renderExploreGrid();
+
+}
+
+const VERIFIED_SVG = `
+
+<span class="verified-badge" title="Verified">
+
+<svg viewBox="0 0 24 24" width="14" height="14" fill="#0095f6">
+
+<path d="M12 2L14.8 4.2L18.4 3.8L19.6 7.2L22.6 9.2L21.6 12.6L22.6 16L19.6 18L18.4 21.4L14.8 21L12 23.2L9.2 21L5.6 21.4L4.4 18L1.4 16L2.4 12.6L1.4 9.2L4.4 7.2L5.6 3.8L9.2 4.2L12 2Z"> </path>
+
+<path d="M9.5 12.5L11.2 14.2L15 10.2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+
+</svg>
+
+</span>
+
+`;
+
+/* ------------------------------------------------------------------------
+
+4. STORIES TRAY & FULLSCREEN STORY VIEWER
+
+------------------------------------------------------------------------ */
+
+function renderStories() {
+
+const container = document.getElementById("storiesTray");
+
+container.innerHTML = appState.stories.map((story, idx) => `
+
+<div class="story-item" onclick="openStoryViewer(${idx})">
+
+<div class="story-ring ${story.isOwn ? 'own' : (story.seen ? 'seen' : '')}">
+
+<img class="story-avatar" src="${story.isOwn ? appState.currentUser.avatar : story.avatar}" alt="${story.username}">
+
+${story.isOwn ? '<span class="story-add-badge">+</span>' : ''}
+
+</div>
+
+<span class="story-username">${story.username}</span>
+
+</div>
+
+`).join("");
+
+}
+
+function openStoryViewer(userIndex) {
+
+activeStoryUserIdx = userIndex;
+
+activeStorySlideIdx = 0;
+
+appState.stories[userIndex].seen = true;
+
+saveState();
+
+renderStories();
+
+document.getElementById("storyViewerOverlay").classList.add("open");
+
+playCurrentStorySlide();
+
+}
+
+function playCurrentStorySlide() {
+
+clearInterval(storyTimer);
+
+const storyUser = appState.stories[activeStoryUserIdx];
+
+if (!storyUser) return closeStoryViewer();
+
+const slide = storyUser.slides[activeStorySlideIdx];
+
+document.getElementById("storyViewerAvatar").src = storyUser.isOwn ?appState.currentUser.avatar : storyUser.avatar;
+
+document.getElementById("storyViewerUser").textContent = storyUser.isOwn ?appState.currentUser.username : storyUser.username;
+
+document.getElementById("storyViewerTime").textContent = slide.time;
+
+document.getElementById("storyViewerImage").src = slide.img;
+
+// Build progress bars
+
+const barsContainer = document.getElementById("storyProgressBars");
+
+barsContainer.innerHTML = storyUser.slides.map((_, i) => `
+
+<div class="story-bar-track">
+
+<div class="story-bar-fill" id="storyBarFill_${i}" style="width: ${i < activeStorySlideIdx ? '100%' : '0%'}"></div>
+
+</div>
+
+`).join("");
+
+let progress = 0;
+
+const activeBar = document.getElementById("storyBarFill_" + activeStorySlideIdx);
+
+storyTimer = setInterval(() => {
+
+progress += 2;
+
+if (activeBar) activeBar.style.width = progress + "%";
+
+if (progress >= 100) {
+
+nextStorySlide();
+
+}
+
+}, 80);
+
+}
+
+function nextStorySlide() {
+
+const storyUser = appState.stories[activeStoryUserIdx];
+
+if (activeStorySlideIdx + 1 < storyUser.slides.length) {
+
+activeStorySlideIdx++;
+
+playCurrentStorySlide();
+
+} else if (activeStoryUserIdx + 1 < appState.stories.length) {
+
+activeStoryUserIdx++;
+
+activeStorySlideIdx = 0;
+
+appState.stories[activeStoryUserIdx].seen = true;
+
+saveState();
+
+renderStories();
+
+playCurrentStorySlide();
+
+} else {
+
+closeStoryViewer();
+
+}
+
+}
+
+function prevStorySlide() {
+
+if (activeStorySlideIdx > 0) {
+
+activeStorySlideIdx--;
+
+playCurrentStorySlide();
+
+} else if (activeStoryUserIdx > 0) {
+
+activeStoryUserIdx--;
+
+activeStorySlideIdx = 0;
+
+playCurrentStorySlide();
+
+}
+
+}
+
+function closeStoryViewer() {
+
+clearInterval(storyTimer);
+
+document.getElementById("storyViewerOverlay").classList.remove("open");
+
+}
+
+function sendStoryReply(e) {
+
+e.preventDefault();
+
+const input = document.getElementById("storyReplyInput");
+
+if (!input.value.trim()) return;
+
+showToast("Reply sent to story!");
+
+input.value = "";
+
+}
+
+/* ------------------------------------------------------------------------
+
+5. HOME FEED RENDERING & INTERACTIONS (LIKE, DOUBLE TAP, COMMENT, SAVE)
+
+------------------------------------------------------------------------ */
+
+function renderFeed() {
+
+const feedContainer = document.getElementById("feedPostsContainer");
+
+feedContainer.innerHTML = appState.posts.map(post => `
+
+<article class="post-card" id="post_${post.id}">
+
+<div class="post-header">
+
+<div class="post-user-info">
+
+<div class="post-avatar-ring" onclick="openStoryViewer(1)">
+
+<img src="${post.userAvatar}" alt="${post.username}">
+
+</div>
+
+<div class="post-meta">
+
+<div class="post-username-row">
+
+<span class="post-username-link" onclick="openPostDetail('${post.id}')">${post.username} </span>
+
+${post.verified ? VERIFIED_SVG : ''}
+
+<span class="post-time">• ${post.timeAgo}</span>
+
+</div>
+
+${post.location ? `<span class="post-location">${post.location}</span>` : ''}
+
+</div>
+
+</div>
+
+<button class="post-more-btn" onclick="showToast('Post link copied to clipboard!')">
+
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+
+<circle cx="12" cy="12" r="1.5"></circle>
+
+<circle cx="6" cy="12" r="1.5"></circle>
+
+<circle cx="18" cy="12" r="1.5"></circle>
+
+</svg>
+
+</button>
+
+</div>
+
+<div class="post-media-box" ondblclick="handleDoubleTapLike('${post.id}')">
+
+<img class="post-media-img" src="${post.image}" alt="Post" loading="lazy">
+
+<div class="double-tap-heart" id="dtHeart_${post.id}">
+
+<svg width="88" height="88" viewBox="0 0 24 24" fill="#ffffff">
+
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+
+</svg>
+
+</div>
+
+</div>
+
+<div class="post-actions">
+
+<div class="post-actions-left">
+
+<button class="action-icon-btn ${post.liked ? 'liked' : ''}" onclick="togglePostLike('${post.id}')" title="Like">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="${post.liked ? '#ff3040' : 'none'}" stroke="${post.liked ? '#ff3040' : 'currentColor'}" stroke-width="2">
+
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+
+</svg>
+
+</button>
+
+<button class="action-icon-btn" onclick="openPostDetail('${post.id}')" title="Comment">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"> </path>
+
+</svg>
+
+</button>
+
+<button class="action-icon-btn" onclick="sharePostToChat('${post.id}')" title="Share">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+<line x1="22" y1="2" x2="11" y2="13"></line>
+
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+
+</svg>
+
+</button>
+
+</div>
+
+<button class="action-icon-btn ${post.saved ? 'saved' : ''}" onclick="togglePostSave('${post.id}')" title="Save">
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="${post.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+
+<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+
+</svg>
+
+</button>
+
+</div>
+
+<div class="post-likes-count">${post.likes.toLocaleString()} likes</div>
+
+<div class="post-caption">
+
+<span class="caption-user" onclick="openPostDetail('${post.id}')">${post.username}</span>
+
+${formatCaptionWithHashtags(post.caption)}
+
+</div>
+
+${post.comments.length > 0 ? `
+
+<button class="view-comments-btn" onclick="openPostDetail('${post.id}')">
+
+View all ${post.comments.length} comment${post.comments.length > 1 ? 's' : ''}
+
+</button>
+
+<div class="post-comments-preview">
+
+${post.comments.slice(-2).map(c => `
+
+<div class="comment-line">
+
+<span><strong>${c.user}</strong>${c.text}</span>
+
+</div>
+
+`).join("")}
+
+</div>
+
+` : ''}
+
+<form class="add-comment-box" onsubmit="submitInlineComment(event, '${post.id}')">
+
+<input type="text" class="add-comment-input" id="commentInput_${post.id}" placeholder="Add a comment..." oninput="toggleCommentBtn('${post.id}', this.value)" />
+
+<button type="submit" class="post-comment-submit" id="commentBtn_${post.id}">Post</button>
+
+</form>
+
+</article>
+
+`).join("");
+
+}
+
+function togglePostLike(postId) {
+
+const post = appState.posts.find(p => p.id === postId) || appState.exploreExtras.find(p => p.id === postId);
+
+if (!post) return;
+
+post.liked = !post.liked;
+
+post.likes += post.liked ? 1 : -1;
+
+saveState();
+
+renderFeed();
+
+}
+
+function handleDoubleTapLike(postId) {
+
+const post = appState.posts.find(p => p.id === postId);
+
+const heartEl = document.getElementById("dtHeart_" + postId);
+
+if (heartEl) {
+
+heartEl.classList.remove("animate");
+
+void heartEl.offsetWidth;
+
+heartEl.classList.add("animate");
+
+}
+
+if (post && !post.liked) {
+
+post.liked = true;
+
+post.likes += 1;
+
+saveState();
+
+setTimeout(() => renderFeed(), 450);
+
+}
+
+}
+
+function togglePostSave(postId) {
+
+const post = appState.posts.find(p => p.id === postId) || appState.exploreExtras.find(p => p.id === postId);
+
+if (!post) return;
+
+post.saved = !post.saved;
+
+saveState();
+
+renderFeed();
+
+showToast(post.saved ? "Saved to your collection" : "Removed from saved");
+
+}
+
+function toggleCommentBtn(postId, val) {
+
+const btn = document.getElementById("commentBtn_" + postId);
+
+if (btn) btn.classList.toggle("ready", val.trim().length > 0);
+
+}
+
+function submitInlineComment(e, postId) {
+
+e.preventDefault();
+
+const input = document.getElementById("commentInput_" + postId);
+
+const text = input.value.trim();
+
+if (!text) return;
+
+const post = appState.posts.find(p => p.id === postId) || appState.exploreExtras.find(p => p.id === postId);
+
+if (post) {
+
+post.comments.push({ user: appState.currentUser.username, text });
+
+saveState();
+
+renderFeed();
+
+}
+
+}
+
+function sharePostToChat(postId) {
+
+const post = appState.posts.find(p => p.id === postId);
+
+if (!post) return;
+
+appState.chats[0].messages.push({
+
+from: "me",
+
+text: `Check out this post by @${post.username}: "${post.caption.slice(0, 45)}..."   📸` });
+
+saveState();
+
+showToast(`Sent to @${appState.chats[0].username} in DMs!`);
+
+}
+
+/* ------------------------------------------------------------------------
+
+6. RIGHT SUGGESTIONS RAIL
+
+------------------------------------------------------------------------ */
+
+function renderSuggestions() {
+
+document.getElementById("railCurrentUserImg").src = appState.currentUser.avatar;
+
+document.getElementById("railCurrentUsername").textContent = appState.currentUser.username;
+
+document.getElementById("railCurrentFullname").textContent = appState.currentUser.fullName;
+
+const container = document.getElementById("suggestionsContainer");
+
+container.innerHTML = appState.suggestions.map((s, idx) => `
+
+<div class="rail-user-row" style="margin-bottom:0;">
+
+<div class="rail-user-left">
+
+<img class="rail-avatar-sm" src="${s.avatar}" alt="${s.username}">
+
+<div class="rail-names">
+
+<span class="rail-username">${s.username}</span>
+
+<span class="rail-subtext" style="font-size:12px;">${s.subtitle}</span>
+
+</div>
+
+</div>
+
+<button class="rail-action-btn ${s.following ? 'following' : ''}" onclick="toggleFollowSuggestion(${idx})">
+
+${s.following ? 'Following' : 'Follow'}
+
+</button>
+
+</div>
+
+`).join("");
+
+}
+
+function toggleFollowSuggestion(idx) {
+
+const target = appState.suggestions[idx];
+
+target.following = !target.following;
+
+appState.currentUser.following += target.following ? 1 : -1;
+
+saveState();
+
+renderSuggestions();
+
+showToast(target.following ? `Following @${target.username}` : `Unfollowed @${target.username}`);
+
+}
+
+/* ------------------------------------------------------------------------
+
+7. EXPLORE GRID & SEARCH
+
+------------------------------------------------------------------------ */
+
+function filterExploreCategory(cat, btnEl) {
+
+currentExploreCategory = cat;
+
+document.querySelectorAll(".tag-pill").forEach(b => b.classList.remove("active"));
+
+btnEl.classList.add("active");
+
+renderExploreGrid();
+
+}
+
+function renderExploreGrid() {
+
+const query = document.getElementById("exploreSearchInput").value.trim().toLowerCase();
+
+const allPosts = [...appState.posts, ...appState.exploreExtras];
+
+const filtered = allPosts.filter(p => {
+
+const matchesCat = currentExploreCategory === "all" || p.category === currentExploreCategory;
+
+const matchesQuery = !query ||
+
+p.username.toLowerCase().includes(query) ||
+
+p.caption.toLowerCase().includes(query) ||
+
+(p.location && p.location.toLowerCase().includes(query));
+
+return matchesCat && matchesQuery;
+
+});
+
+const grid = document.getElementById("exploreGridContainer");
+
+grid.innerHTML = filtered.map(post => `
+
+<div class="grid-tile" onclick="openPostDetail('${post.id}')">
+
+<img src="${post.image}" alt="Explore" loading="lazy">
+
+<div class="grid-overlay">
+
+<span class="grid-stat">❤️ ${post.likes.toLocaleString()}</span> <span class="grid-stat">💬 ${post.comments.length}</span>
+
+</div>
+
+</div>
+
+`).join("");
+
+}
+
+/* ------------------------------------------------------------------------
+
+8. REELS FEED
+
+------------------------------------------------------------------------ */
+
+function renderReels() {
+
+const container = document.getElementById("reelsFeedContainer");
+
+container.innerHTML = appState.reels.map(reel => `
+
+<div class="reel-card">
+
+<img class="reel-bg-media" src="${reel.image}" alt="Reel">
+
+<div class="reel-gradient"></div>
+
+<div class="reel-bottom-info">
+
+<div class="reel-user-row">
+
+<img src="${reel.avatar}" alt="${reel.username}">
+
+<span style="font-weight:600; font-size:14px;">${reel.username}</span>
+
+<button class="reel-follow-pill" onclick="this.textContent = this.textContent === 'Follow' ?'Following' : 'Follow'">Follow</button>
+
+</div>
+
+<div class="reel-caption">${reel.caption}</div>
+
+<div class="reel-audio-pill">
+
+<span>   🎵</span> <span>${reel.audio}</span>
+
+</div>
+
+</div>
+
+<div class="reel-side-actions">
+
+<button class="reel-action-unit" onclick="toggleReelLike('${reel.id}')">
+
+<svg width="28" height="28" viewBox="0 0 24 24" fill="${reel.liked ? '#ff3040' : 'none'}" stroke="${reel.liked ? '#ff3040' : '#ffffff'}" stroke-width="2">
+
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+
+</svg>
+
+<span>${reel.likes.toLocaleString()}</span>
+
+</button>
+
+<button class="reel-action-unit" onclick="showToast('Reel comments (${reel.commentsCount})')">
+
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+
+<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"> </path>
+
+</svg>
+
+<span>${reel.commentsCount}</span>
+
+</button>
+
+<button class="reel-action-unit" onclick="showToast('Reel link copied!')">
+
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+
+<line x1="22" y1="2" x2="11" y2="13"></line>
+
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+
+</svg>
+
+</button>
+
+<div class="reel-disc">
+
+<img src="${reel.avatar}" style="width:100%; height:100%; object-fit:cover;" alt="Audio">
+
+</div>
+
+</div>
+
+</div>
+
+`).join("");
+
+}
+
+function toggleReelLike(reelId) {
+
+const reel = appState.reels.find(r => r.id === reelId);
+
+if (!reel) return;
+
+reel.liked = !reel.liked;
+
+reel.likes += reel.liked ? 1 : -1;
+
+saveState();
+
+renderReels();
+
+}
+
+/* ------------------------------------------------------------------------
+
+9. DIRECT MESSAGES (REAL-TIME SIMULATED CHAT)
+
+------------------------------------------------------------------------ */
+
+function renderChatThreads() {
+
+document.getElementById("chatHeaderUsername").textContent = appState.currentUser.username;
+
+const list = document.getElementById("chatThreadsContainer");
+
+list.innerHTML = appState.chats.map(chat => {
+
+const lastMsg = chat.messages[chat.messages.length - 1];
+
+return `
+
+<div class="chat-thread-item ${chat.id === activeChatId ? 'active' : ''}" onclick="selectChatThread('${chat.id}')">
+
+<div class="chat-avatar-wrap">
+
+<img src="${chat.avatar}" alt="${chat.username}">
+
+${chat.online ? '<span class="online-indicator"></span>' : ''}
+
+</div>
+
+<div class="chat-thread-info">
+
+<div class="chat-thread-name">${chat.fullName}</div>
+
+<div class="chat-thread-preview" style="${chat.unread ? 'font-weight:700; color:var(--text-primary);' : ''}">
+
+${lastMsg ? (lastMsg.from === 'me' ? 'You: ' + lastMsg.text : lastMsg.text) : 'Say hi!'}
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}).join("");
+
+}
+
+function selectChatThread(chatId) {
+
+activeChatId = chatId;
+
+const thread = appState.chats.find(c => c.id === chatId);
+
+if (thread) thread.unread = false;
+
+updateUnreadBadges();
+
+saveState();
+
+renderChatThreads();
+
+renderActiveChat();
+
+document.getElementById("view-messages").classList.add("chat-open");
+
+}
+
+function closeMobileChat() {
+
+document.getElementById("view-messages").classList.remove("chat-open");
+
+}
+
+function renderActiveChat() {
+
+const thread = appState.chats.find(c => c.id === activeChatId);
+
+if (!thread) return;
+
+document.getElementById("activeChatAvatar").src = thread.avatar;
+
+document.getElementById("activeChatName").textContent = thread.fullName;
+
+document.getElementById("activeChatStatus").textContent = thread.online ? "Active now" : "Active 1h ago";
+
+const area = document.getElementById("chatMessagesArea");
+
+area.innerHTML = thread.messages.map(m => `
+
+<div class="msg-bubble ${m.from === 'me' ? 'outgoing' : 'incoming'}">${m.text}</div>
+
+`).join("");
+
+area.scrollTop = area.scrollHeight;
+
+}
+
+function appendChatEmoji(emoji) {
+
+const input = document.getElementById("chatMessageInput");
+
+input.value += emoji;
+
+input.focus();
+
+}
+
+function sendChatMessage(e) {
+
+e.preventDefault();
+
+const input = document.getElementById("chatMessageInput");
+
+const text = input.value.trim();
+
+if (!text) return;
+
+const thread = appState.chats.find(c => c.id === activeChatId);
+
+if (!thread) return;
+
+thread.messages.push({ from: "me", text });
+
+input.value = "";
+
+saveState();
+
+renderActiveChat();
+
+renderChatThreads();
+
+// Simulated instant smart reply
+
+setTimeout(() => {
+
+const replies = [
+
+"Bilkul bhai! Ekdum mast idea hai🔥", "Done! Main abhi check karta hoon 💯",
+
+"Haha sahi kaha 😄👍",
+
+"Next post kab aa rahi hai?"
+
+];
+
+const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+thread.messages.push({ from: "them", text: randomReply });
+
+saveState();
+
+if (activeChatId === thread.id) renderActiveChat();
+
+renderChatThreads();
+
+}, 1100);
+
+}
+
+function updateUnreadBadges() {
+
+const unreadCount = appState.chats.filter(c => c.unread).length;
+
+const dBadge = document.getElementById("desktopMsgBadge");
+
+const mBadge = document.getElementById("mobileMsgBadge");
+
+if (unreadCount > 0) {
+
+dBadge.style.display = "flex";
+
+mBadge.style.display = "flex";
+
+dBadge.textContent = unreadCount;
+
+mBadge.textContent = unreadCount;
+
+} else {
+
+dBadge.style.display = "none";
+
+mBadge.style.display = "none";
+
+}
+
+}
+
+/* ------------------------------------------------------------------------
+
+10. PROFILE PAGE & EDIT PROFILE
+
+------------------------------------------------------------------------ */
+
+function syncUserAvatars() {
+
+const pic = appState.currentUser.avatar;
+
+document.getElementById("sidebarUserAvatar").src = pic;
+
+document.getElementById("mobileNavAvatar").src = pic;
+
+}
+
+function renderProfile() {
+
+const u = appState.currentUser;
+
+const myPosts = appState.posts.filter(p => p.username === u.username);
+
+document.getElementById("profileMainAvatar").src = u.avatar;
+
+document.getElementById("profileMainHandle").textContent = u.username;
+
+document.getElementById("profilePostsCount").textContent = myPosts.length;
+
+document.getElementById("profileFollowersCount").textContent = u.followers.toLocaleString();
+
+document.getElementById("profileFollowingCount").textContent = u.following.toLocaleString();
+
+document.getElementById("profileFullName").textContent = u.fullName;
+
+document.getElementById("profileBioText").textContent = u.bio;
+
+document.getElementById("profileWebsiteLink").textContent = u.website;
+
+document.getElementById("profileWebsiteLink").href = u.website.startsWith("http") ? u.website : "https://" + u.website;
+
+// Highlights
+
+document.getElementById("profileHighlightsRow").innerHTML = appState.highlights.map((h, i) => `
+
+<div class="highlight-item" onclick="openStoryViewer(${i % appState.stories.length})">
+
+<div class="highlight-circle">
+
+<img src="${h.img}" alt="${h.title}">
+
+</div>
+
+<span class="highlight-label">${h.title}</span>
+
+</div>
+
+`).join("");
+
+// Grid (Posts or Saved)
+
+const allPosts = [...appState.posts, ...appState.exploreExtras];
+
+const gridItems = currentProfileTab === "posts"
+
+? myPosts
+
+: allPosts.filter(p => p.saved);
+
+const grid = document.getElementById("profileGridContainer");
+
+if (gridItems.length === 0) {
+
+grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:48px 16px; color:var(--text-secondary);">No ${currentProfileTab} to display yet.</div>`;
+
+return;
+
+}
+
+grid.innerHTML = gridItems.map(post => `
+
+<div class="grid-tile" onclick="openPostDetail('${post.id}')">
+
+<img src="${post.image}" alt="Post">
+
+<div class="grid-overlay">
+
+<span class="grid-stat">❤️ ${post.likes.toLocaleString()}</span> <span class="grid-stat">💬 ${post.comments.length}</span>
+
+</div>
+
+</div>
+
+`).join("");
+
+}
+
+function switchProfileTab(tab) {
+
+currentProfileTab = tab;
+
+document.getElementById("tabPostsBtn").classList.toggle("active", tab === "posts");
+
+document.getElementById("tabSavedBtn").classList.toggle("active", tab === "saved");
+
+renderProfile();
+
+}
+
+function openEditProfileModal() {
+
+const u = appState.currentUser;
+
+document.getElementById("editNameInput").value = u.fullName;
+
+document.getElementById("editUsernameInput").value = u.username;
+
+document.getElementById("editBioInput").value = u.bio;
+
+document.getElementById("editWebsiteInput").value = u.website;
+
+document.getElementById("editProfileModal").classList.add("open");
+
+}
+
+function closeEditProfileModal() {
+
+document.getElementById("editProfileModal").classList.remove("open");
+
+}
+
+function saveProfileEdits() {
+
+const newName = document.getElementById("editNameInput").value.trim();
+
+const newUser = document.getElementById("editUsernameInput").value.trim().replace(/\s+/g, "_");
+
+const newBio = document.getElementById("editBioInput").value.trim();
+
+const newWeb = document.getElementById("editWebsiteInput").value.trim();
+
+if (newName) appState.currentUser.fullName = newName;
+
+if (newUser) {
+
+const oldUser = appState.currentUser.username;
+
+appState.currentUser.username = newUser;
+
+appState.posts.forEach(p => { if (p.username === oldUser) p.username = newUser; });
+
+}
+
+appState.currentUser.bio = newBio;
+
+appState.currentUser.website = newWeb;
+
+saveState();
+
+closeEditProfileModal();
+
+renderProfile();
+
+renderSuggestions();
+
+renderFeed();
+
+showToast("Profile updated!");
+
+}
+
+function shareProfileLink() {
+
+showToast(`Copied link: instagram.com/${appState.currentUser.username}`);
+
+}
+
+/* ------------------------------------------------------------------------
+
+11. CREATE NEW POST MODAL
+
+------------------------------------------------------------------------ */
+
+function openCreateModal() {
+
+const presetsRow = document.getElementById("presetThumbsRow");
+
+presetsRow.innerHTML = PRESET_IMAGES.map((url, idx) => `
+
+<img src="${url}" class="preset-thumb ${idx === 0 ? 'selected' : ''}" onclick="selectPresetImage('${url}', this)" alt="Preset">
+
+`).join("");
+
+selectedNewPostImg = PRESET_IMAGES[0];
+
+const preview = document.getElementById("createPreviewImg");
+
+preview.src = selectedNewPostImg;
+
+preview.style.display = "block";
+
+document.getElementById("newPostCaption").value = "";
+
+document.getElementById("newPostLocation").value = "";
+
+document.getElementById("createPostModal").classList.add("open");
+
+}
+
+function closeCreateModal() {
+
+document.getElementById("createPostModal").classList.remove("open");
+
+}
+
+function selectPresetImage(url, el) {
+
+selectedNewPostImg = url;
+
+document.querySelectorAll(".preset-thumb").forEach(t => t.classList.remove("selected"));
+
+if (el) el.classList.add("selected");
+
+const preview = document.getElementById("createPreviewImg");
+
+preview.src = url;
+
+preview.style.display = "block";
+
+}
+
+function handleLocalImageUpload(event) {
+
+const file = event.target.files[0];
+
+if (!file) return;
+
+const reader = new FileReader();
+
+reader.onload = function(e) {
+
+selectedNewPostImg = e.target.result;
+
+const preview = document.getElementById("createPreviewImg");
+
+preview.src = selectedNewPostImg;
+
+preview.style.display = "block";
+
+document.querySelectorAll(".preset-thumb").forEach(t => t.classList.remove("selected"));
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+function publishNewPost() {
+
+const caption = document.getElementById("newPostCaption").value.trim() || "New post   ✨ #InstaClone";
+
+const location = document.getElementById("newPostLocation").value.trim();
+
+const newPost = {
+
+id: "p_" + Date.now(),
+
+username: appState.currentUser.username,
+
+userAvatar: appState.currentUser.avatar,
+
+verified: true,
+
+location,
+
+timeAgo: "Just now",
+
+category: "tech",
+
+image: selectedNewPostImg,
+
+likes: 1,
+
+liked: true,
+
+saved: false,
+
+caption,
+
+comments: []
+
+};
+
+appState.posts.unshift(newPost);
+
+saveState();
+
+closeCreateModal();
+
+switchView("home");
+
+showToast("Your post has been shared!");
+
+}
+
+/* ------------------------------------------------------------------------
+
+12. POST DETAIL MODAL & NOTIFICATIONS LIST
+
+------------------------------------------------------------------------ */
+
+function openPostDetail(postId) {
+
+const post = appState.posts.find(p => p.id === postId) || appState.exploreExtras.find(p => p.id === postId);
+
+if (!post) return;
+
+const modalContent = document.getElementById("postDetailContent");
+
+modalContent.innerHTML = `
+
+<div class="detail-media-pane">
+
+<img src="${post.image}" alt="Post Detail">
+
+</div>
+
+<div class="detail-info-pane">
+
+<div class="post-header" style="padding:14px 16px; border-bottom:1px solid var(--border-color);">
+
+<div class="post-user-info">
+
+<img src="${post.userAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" alt="">
+
+<span style="font-weight:600; font-size:14px;">${post.username}</span>
+
+${post.verified ? VERIFIED_SVG : ''}
+
+</div>
+
+<button onclick="closePostDetailModal()" style="font-size:18px; padding:4px 8px;">✕</button>
+
+</div>
+
+<div class="detail-comments-scroll" id="detailCommentsList">
+
+<div style="font-size:14px; line-height:1.4;">
+
+<strong>${post.username}</strong> ${formatCaptionWithHashtags(post.caption)}
+
+</div>
+
+${post.comments.map(c => `
+
+<div style="font-size:14px; line-height:1.4;">
+
+<strong>${c.user}</strong> ${c.text}
+
+</div>
+
+`).join("")}
+
+</div>
+
+<div style="padding:12px 16px; border-top:1px solid var(--border-color);">
+
+<div style="font-weight:600; font-size:14px; margin-bottom:8px;">${post.likes.toLocaleString()} likes</div>
+
+<form class="add-comment-box" onsubmit="submitModalComment(event, '${post.id}')">
+
+<input type="text" class="add-comment-input" id="modalCommentInput" placeholder="Add a comment..." />
+
+<button type="submit" style="color:var(--accent-blue); font-weight:600; font-size:14px;">Post</button>
+
+</form>
+
+</div>
+
+</div>
+
+`;
+
+document.getElementById("postDetailModal").classList.add("open");
+
+}
+
+function submitModalComment(e, postId) {
+
+e.preventDefault();
+
+const input = document.getElementById("modalCommentInput");
+
+const text = input.value.trim();
+
+if (!text) return;
+
+const post = appState.posts.find(p => p.id === postId) || appState.exploreExtras.find(p => p.id === postId);
+
+if (post) {
+
+post.comments.push({ user: appState.currentUser.username, text });
+
+saveState();
+
+openPostDetail(postId);
+
+renderFeed();
+
+}
+
+}
+
+function closePostDetailModal() {
+
+document.getElementById("postDetailModal").classList.remove("open");
+
+}
+
+function renderNotifications() {
+
+const container = document.getElementById("notifListContainer");
+
+container.innerHTML = appState.notifications.map(n => `
+
+<div class="notif-row">
+
+<img class="notif-user-pic" src="${n.avatar}" alt="${n.user}">
+
+<div class="notif-text">
+
+<strong>${n.user}</strong> ${n.action}
+
+<span style="color:var(--text-secondary);"> ${n.time}</span>
+
+</div>
+
+${n.postImg ? `<img class="notif-post-thumb" src="${n.postImg}" alt="Post">` : `<button class="btn-primary" style="padding:5px 12px; font-size:12px;" onclick="this.textContent='Following'">Follow</button>`}
+
+</div>
+
+`).join("");
+
+}
+
+/* ------------------------------------------------------------------------
+
+13. APP BOOTSTRAP
+
+------------------------------------------------------------------------ */
+
+window.addEventListener("DOMContentLoaded", () => {
+
+if (localStorage.getItem("insta_dark_mode") === "1") {
+
+document.body.classList.add("dark-mode");
+
+document.getElementById("themeToggleLabel").textContent = "Light Mode";
+
+}
+
+syncUserAvatars();
+
+updateUnreadBadges();
+
+renderStories();
+
+renderFeed();
+
+renderSuggestions();
+
+});
+
+</script>
+
+</body>
+
+</html>
