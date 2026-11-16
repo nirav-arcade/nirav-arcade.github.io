@@ -9,6 +9,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <link rel="manifest" href="./manifest.webmanifest" />
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" />
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js" />
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" />
 <meta name="theme-color" content="#7b2ff7" />
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
@@ -3921,6 +3924,7 @@ max-width: 100%;
 </head>
 
 <body class="auth-locked nx-booting">
+<script>setTimeout(function(){document.body.classList.remove("nx-booting");},10000);</script>
 
 <div id="authScreen" aria-labelledby="authTitle">
 
@@ -7554,7 +7558,7 @@ console.warn("Service worker registration failed:", error);
 const NXgramLocalAuth = {
 init() { if (window.__nxSetMode) window.__nxSetMode("signup"); },
 setMode(m) { if (window.__nxSetMode) window.__nxSetMode(m); },
-submit(e) { e.preventDefault(); if (window.__nxSubmit) window.__nxSubmit(); },
+submit(e) { e.preventDefault(); if (window.__nxSubmit) window.__nxSubmit(); else { const m = document.getElementById("authMessage"); if (m) { m.textContent = "Still connecting... slow network. Wait a few seconds and try again."; m.style.color = "#b42318"; } } },
 isAdmin() { return Boolean(window.__nxIsAdmin); }
 };
 window.NXgramLocalAuth = NXgramLocalAuth;
