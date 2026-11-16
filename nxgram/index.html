@@ -3965,7 +3965,7 @@ max-width: 100%;
 
 <div class="auth-message" id="authMessage" role="status" aria-live="polite"></div>
 
-<div class="auth-local-note">This demo account is saved on this device only. It isn't an online account yet.</div>
+<div class="auth-local-note">Your account is online. Log in from any phone with the same username and password.</div>
 
 </div>
 
@@ -7540,227 +7540,12 @@ console.warn("Service worker registration failed:", error);
 
 }
 
-const NXgramLocalAuth = (() => {
-
-const STORAGE_KEY = "nxgram_local_auth_v1";
-const PBKDF2_ITERATIONS = 120000;
-let mode = "signup";
-
-function readAccount() {
-
-try {
-
-const account = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-
-if (account && account.version === 1 && typeof account.username === "string" && account.salt && account.verifier) return account;
-
-} catch (error) {
-
-console.warn("Local account data could not be read.");
-
-}
-
-return null;
-
-}
-
-function showMessage(text, isError = true) {
-
-const message = document.getElementById("authMessage");
-
-message.textContent = text;
-
-message.style.color = isError ? "#b42318" : "#137333";
-
-}
-
-function setMode(nextMode) {
-
-mode = nextMode === "login" ? "login" : "signup";
-
-const signup = mode === "signup";
-
-document.getElementById("authSignupTab").classList.toggle("active", signup);
-
-document.getElementById("authSignupTab").setAttribute("aria-selected", String(signup));
-
-document.getElementById("authLoginTab").classList.toggle("active", !signup);
-
-document.getElementById("authLoginTab").setAttribute("aria-selected", String(!signup));
-
-document.getElementById("authSubtitle").textContent = signup ? "A little space for your people." : "Welcome back to NXgram.";
-
-document.getElementById("authSubmitButton").textContent = signup ? "Create account" : "Log in";
-
-document.getElementById("authPassword").setAttribute("autocomplete", signup ? "new-password" : "current-password");
-
-document.getElementById("authPassword").setAttribute("placeholder", signup ? "At least 8 characters" : "Your password");
-
-showMessage("");
-
-}
-
-function bytesToBase64(bytes) {
-
-let binary = "";
-
-for (const byte of bytes) binary += String.fromCharCode(byte);
-
-return btoa(binary);
-
-}
-
-function base64ToBytes(text) {
-
-return Uint8Array.from(atob(text), char => char.charCodeAt(0));
-
-}
-
-async function deriveVerifier(password, salt) {
-
-const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-
-const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, key, 256);
-
-return new Uint8Array(bits);
-
-}
-
-function unlock() {
-
-document.body.classList.remove("auth-locked");
-
-document.getElementById("authPassword").value = "";
-
-}
-
-async function submit(event) {
-
-event.preventDefault();
-
-const username = document.getElementById("authUsername").value.trim();
-
-const password = document.getElementById("authPassword").value;
-
-if (!username || !password) return;
-
-if (mode === "signup" && password.length < 8) {
-
-showMessage("Use at least 8 characters for your password.");
-
-return;
-
-}
-
-if (!crypto?.subtle) {
-
-showMessage("This browser cannot set up local sign-in securely.");
-
-return;
-
-}
-
-const button = document.getElementById("authSubmitButton");
-
-button.disabled = true;
-
-button.textContent = mode === "signup" ? "Creating account…" : "Checking…";
-
-try {
-
-const account = readAccount();
-
-if (mode === "signup") {
-
-if (account) {
-
-showMessage("An account already exists on this device.");
-
-return;
-
-}
-
-const salt = crypto.getRandomValues(new Uint8Array(16));
-
-const verifier = await deriveVerifier(password, salt);
-
-const role = isRepoVerifiedUser(username) ? "admin" : "user";
-
-localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, username, role, salt: bytesToBase64(salt), verifier: bytesToBase64(verifier), iterations: PBKDF2_ITERATIONS }));
-
-showMessage("Account created. Welcome to NXgram!", false);
-
-unlock();
-
-return;
-
-}
-
-if (!account) {
-
-showMessage("No account is saved on this device yet. Sign up first.");
-
-return;
-
-}
-
-const salt = base64ToBytes(account.salt);
-
-const supplied = await deriveVerifier(password, salt);
-
-const expected = base64ToBytes(account.verifier);
-
-const matches = supplied.length === expected.length && supplied.every((value, index) => value === expected[index]);
-
-if (!matches || account.username.toLowerCase() !== username.toLowerCase()) {
-
-showMessage("Username or password doesn't match this device's account.");
-
-return;
-
-}
-
-showMessage("Welcome back!", false);
-
-unlock();
-
-} catch (error) {
-
-console.error("Local sign-in failed.", error);
-
-showMessage("Could not save this account on the device. Check available storage and try again.");
-
-} finally {
-
-button.disabled = false;
-
-button.textContent = mode === "signup" ? "Create account" : "Log in";
-
-}
-}
-
-function init() {
-
-if (readAccount()) {
-
-// A saved local account enters directly, as requested; app data remains separate.
-
-document.body.classList.remove("auth-locked");
-
-return;
-
-}
-
-document.body.classList.add("auth-locked");
-
-setMode("signup");
-
-}
-
-return { init, setMode, submit, isAdmin: () => readAccount()?.role === "admin" };
-
-})();
-
+const NXgramLocalAuth = {
+init() { document.body.classList.add("auth-locked"); if (window.__nxSetMode) window.__nxSetMode("signup"); },
+setMode(m) { if (window.__nxSetMode) window.__nxSetMode(m); },
+submit(e) { e.preventDefault(); if (window.__nxSubmit) window.__nxSubmit(); },
+isAdmin() { return Boolean(window.__nxIsAdmin); }
+};
 window.NXgramLocalAuth = NXgramLocalAuth;
 
 /* ------------------------------------------------------------------------
@@ -7832,12 +7617,6 @@ body.dark-mode #nxAuth .box{background:#121212;border-color:#262626}
 #nxMembers h3{margin:0 0 4px}#nxMembers .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #efefef;font-size:14px}
 #nxMembers .row small{color:#8e8e8e;margin-left:auto}#nxMembers button{margin-top:12px;margin-right:8px;padding:7px 14px;border:0;border-radius:8px;cursor:pointer;font-weight:600}
 </style>
-<div id="nxAuth"><div class="box"><h1>NXgram</h1>
-<input id="nxFull" placeholder="Full name" style="display:none" autocomplete="name">
-<input id="nxUser" placeholder="Username" autocapitalize="none" autocomplete="username">
-<input id="nxPass" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password">
-<button class="go" id="nxGo">Log in</button><div class="err" id="nxErr"></div>
-<div class="sw" id="nxSw">Don't have an account? <a id="nxToggle">Sign up</a></div></div></div>
 <button id="nxMembersBtn">👥 Members</button>
 <div id="nxMembers"><div class="box"><h3 id="nxMTitle">Members</h3><div id="nxMList"></div><button id="nxMClose">Close</button><button id="nxLogout" style="background:#ed4956;color:#fff">Log out</button></div></div>
 <script type="module">
@@ -7853,34 +7632,37 @@ function avatarFor(name){const c=COLORS[(name.charCodeAt(0)+name.length)%COLORS.
 const toEmail=u=>u+"@nxgram.app";
 let mode="login",me=null,unsubs=[],postsRaw=[],commentsBy={};
 function ago(ts){if(!ts)return"Just now";const s=Math.max(0,(Date.now()-ts.toMillis())/1000);if(s<60)return"Just now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d";}
-function setMode(m){mode=m;$("nxFull").style.display=m==="signup"?"block":"none";$("nxGo").textContent=m==="signup"?"Sign up":"Log in";$("nxSw").innerHTML=m==="signup"?'Have an account? <a id="nxT">Log in</a>':'Don\'t have an account? <a id="nxT">Sign up</a>';$("nxT").onclick=()=>setMode(m==="signup"?"login":"signup");$("nxErr").textContent="";}
-$("nxToggle").onclick=()=>setMode("signup");
-function fail(e){const c=e.code||"";$("nxErr").textContent=c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found")?"Wrong username or password.":c.includes("weak-password")?"Password must be at least 6 characters.":c.includes("too-many")?"Too many tries, wait a bit.":(e.message||"Something went wrong");}
-$("nxGo").onclick=async()=>{
- $("nxErr").textContent="";const u=$("nxUser").value.trim().toLowerCase(),p=$("nxPass").value;
- if(!/^[a-z0-9._]{3,20}$/.test(u)){$("nxErr").textContent="Username: 3-20 letters, numbers, . or _";return;}
- if(p.length<6){$("nxErr").textContent="Password must be at least 6 characters.";return;}
- $("nxGo").disabled=true;
+function showMsg(t,err=true){const m=$("authMessage");m.textContent=t;m.style.color=err?"#b42318":"#137333";}
+window.__nxSetMode=function(m){mode=m==="login"?"login":"signup";const su=mode==="signup";
+ $("authSignupTab").classList.toggle("active",su);$("authLoginTab").classList.toggle("active",!su);
+ $("authSignupTab").setAttribute("aria-selected",String(su));$("authLoginTab").setAttribute("aria-selected",String(!su));
+ $("authSubtitle").textContent=su?"A little space for your people.":"Welcome back to NXgram.";
+ $("authSubmitButton").textContent=su?"Create account":"Log in";showMsg("");};
+function fail(e){const c=e.code||"";showMsg(c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found")?"Wrong username or password.":c.includes("weak-password")?"Password is too weak (min 6 characters).":c.includes("too-many")?"Too many tries, wait a bit.":c.includes("permission")?"That username is taken. Try another one.":(e.message||"Something went wrong"));}
+window.__nxSubmit=async function(){
+ const u=$("authUsername").value.trim().toLowerCase(),p=$("authPassword").value;
+ if(!/^[a-z0-9._]{3,20}$/.test(u)){showMsg("Username: 3-20 letters, numbers, . or _");return;}
+ if(p.length<6){showMsg("Password must be at least 6 characters.");return;}
+ const btn=$("authSubmitButton");btn.disabled=true;showMsg("");
  try{
   if(mode==="login"){await signInWithEmailAndPassword(auth,toEmail(u),p);}
   else{
-   const full=$("nxFull").value.trim()||u;
    const cred=await createUserWithEmailAndPassword(auth,toEmail(u),p);
    try{const b=writeBatch(db);b.set(doc(db,"usernames",u),{uid:cred.user.uid});
-    b.set(doc(db,"users",cred.user.uid),{username:u,usernameLower:u,fullName:full,bio:"",createdAt:serverTimestamp()});await b.commit();
+    b.set(doc(db,"users",cred.user.uid),{username:u,usernameLower:u,fullName:u,bio:"",createdAt:serverTimestamp()});await b.commit();
    }catch(e){try{await deleteUser(cred.user);}catch(_){}throw e;}
    await boot(cred.user);
   }
  }catch(e){fail(e);}
- $("nxGo").disabled=false;
+ btn.disabled=false;
 };
 async function boot(user){
  const snap=await getDoc(doc(db,"users",user.uid));
  const d=snap.exists()?snap.data():{username:(user.email||"user").split("@")[0],fullName:""};
  me={uid:user.uid,...d};
- appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:avatarFor(me.username),bio:me.bio||"",website:"",followers:0,following:0};
+ appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:avatarFor(me.username),bio:me.bio||"",website:"",followers:0,following:0,connectedProfiles:{}};
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
- $("nxAuth").style.display="none";$("nxMembersBtn").style.display="block";
+ document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7890,7 +7672,7 @@ async function boot(user){
  unsubs.push(onSnapshot(collection(db,"users"),qs=>{renderMembers(qs.docs.map(x=>({id:x.id,...x.data()})));}));
 }
 function rebuild(){
- appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:avatarFor(p.username),verified:false,location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
+ appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:avatarFor(p.username),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
  try{syncUserAvatars();renderStories();renderFeed();renderSuggestions();}catch(e){console.warn(e);}
  try{if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}
 }
@@ -7901,8 +7683,8 @@ function renderMembers(list){
 }
 $("nxMembersBtn").onclick=()=>{$("nxMembers").style.display="flex";};
 $("nxMClose").onclick=()=>{$("nxMembers").style.display="none";};
-$("nxLogout").onclick=async()=>{$("nxMembers").style.display="none";unsubs.forEach(f=>f());unsubs=[];await signOut(auth);$("nxMembersBtn").style.display="none";$("nxAuth").style.display="flex";};
-onAuthStateChanged(auth,u=>{if(u&&!me)boot(u);else if(!u)$("nxAuth").style.display="flex";});
+$("nxLogout").onclick=async()=>{$("nxMembers").style.display="none";unsubs.forEach(f=>f());unsubs=[];await signOut(auth);$("nxMembersBtn").style.display="none";me=null;document.body.classList.add("auth-locked");};
+onAuthStateChanged(auth,u=>{if(u&&!me)boot(u);else if(!u)document.body.classList.add("auth-locked");});
 // ---- overrides ----
 window.saveState=function(){};
 async function flip(id){const r=doc(db,"posts",id);const p=postsRaw.find(x=>x.id===id);if(!p)return;const has=(p.likedBy||[]).includes(me.uid);
@@ -7915,6 +7697,7 @@ window.submitInlineComment=function(e,id){e.preventDefault();const i=document.ge
 window.submitModalComment=function(e,id){e.preventDefault();const i=document.getElementById("modalCommentInput");const t=i.value.trim();if(!t)return;i.value="";addC(id,t).then(()=>setTimeout(()=>openPostDetail(id),400));};
 function shrink(src,max=900,q=0.72){return new Promise(res=>{if(!src.startsWith("data:"))return res(src);const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",q));};im.onerror=()=>res("");im.src=src;});}
 window.publishNewPost=async function(){
+ if(!selectedNewPostImg)return showToast("Select a photo first.");
  const caption=document.getElementById("newPostCaption").value.trim()||"New post ✨";const location=document.getElementById("newPostLocation").value.trim();
  const image=await shrink(selectedNewPostImg);if(!image){showToast("Image problem, pick another");return;}
  try{await addDoc(collection(db,"posts"),{uid:me.uid,username:me.username,image,caption:caption.slice(0,2000),location:location.slice(0,80),likedBy:[],commentCount:0,createdAt:serverTimestamp()});}
