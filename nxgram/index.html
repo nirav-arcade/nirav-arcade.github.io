@@ -3527,68 +3527,102 @@ padding: 25px 21px 19px;
 
 */
 
-/* Local verified profile cards */
+/* Full profile view for other local demo accounts */
 .user-profile-modal {
 position: fixed;
 inset: 0;
 z-index: 1100;
 display: none;
-align-items: center;
-justify-content: center;
-padding: 18px;
-background: rgba(0, 0, 0, 0.58);
+overflow-y: auto;
+background: var(--bg-primary);
 }
-.user-profile-modal.open { display: flex; }
+.user-profile-modal.open { display: block; }
 .user-profile-card {
-width: min(100%, 390px);
-padding: 24px 20px 20px;
-border-radius: 16px;
-background: var(--bg-elevated);
-box-shadow: var(--shadow-lg);
-text-align: center;
+position: relative;
+width: min(100%, 935px);
+min-height: 100vh;
+margin: 0 auto;
+padding: 0 20px 70px;
+background: var(--bg-primary);
+color: var(--text-primary);
 }
-.user-profile-card img {
-width: 88px;
-height: 88px;
-margin: 2px auto 14px;
+.user-profile-topbar {
+position: sticky;
+top: 0;
+z-index: 2;
+display: flex;
+align-items: center;
+height: 54px;
+gap: 16px;
+border-bottom: 1px solid var(--border-subtle);
+background: var(--bg-primary);
+}
+.user-profile-back { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; }
+.user-profile-main {
+display: grid;
+grid-template-columns: 150px minmax(0, 1fr);
+gap: 40px;
+align-items: center;
+padding: 30px 20px 28px;
+border-bottom: 1px solid var(--border-subtle);
+}
+.user-profile-avatar {
+width: 150px;
+height: 150px;
 border-radius: 50%;
 object-fit: cover;
 }
-.user-profile-handle {
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 3px;
-font-size: 19px;
-font-weight: 700;
+.user-profile-information { min-width:0; }
+.user-profile-handle { display:flex; align-items:center; gap:5px; font-size:20px; font-weight:500; overflow-wrap:anywhere; }
+.user-profile-fullname { margin-top:10px; font-size:14px; font-weight:600; }
+.user-profile-counts { display:flex; flex-wrap:wrap; gap:22px; margin:16px 0; font-size:14px; }
+.user-profile-bio { white-space:pre-line; font-size:14px; line-height:1.5; }
+.user-profile-socials { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.user-profile-socials a,.profile-social-link { color:var(--accent-blue); font-size:13px; font-weight:600; }
+.user-profile-admin-action { margin-top:16px; padding:9px 13px; border-radius:8px; background:var(--accent-blue); color:#fff; font-weight:700; }
+.user-profile-close { padding:0; color:var(--text-primary); font-size:24px; line-height:1; }
+.user-profile-grid-title { padding:16px 0 10px; text-align:center; font-size:12px; font-weight:700; letter-spacing:1px; }
+.user-profile-empty { padding:46px 12px; color:var(--text-secondary); text-align:center; font-size:14px; }
+.profile-top-row { position:relative; }
+.profile-social-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.profile-menu-wrap { position:relative; margin-left:auto; flex-shrink:0; }
+.profile-more-button { width:36px; height:36px; border-radius:50%; font-size:24px; line-height:1; }
+.profile-more-button:hover { background:var(--bg-hover); }
+.profile-more-menu {
+position:absolute; top:40px; right:0; z-index:20; display:none; width:190px; padding:6px;
+border:1px solid var(--border-subtle); border-radius:12px; background:var(--bg-elevated); box-shadow:var(--shadow-lg);
 }
-.user-profile-fullname {
-margin-top: 5px;
-color: var(--text-secondary);
-font-size: 14px;
+.profile-more-menu.open { display:block; }
+.profile-more-menu button { width:100%; padding:11px 12px; border-radius:8px; text-align:left; font-size:14px; }
+.profile-more-menu button:hover { background:var(--bg-hover); }
+.settings-overlay,.account-centre-overlay {
+position:fixed; inset:0; z-index:1200; display:none; overflow-y:auto; background:var(--bg-primary); color:var(--text-primary);
 }
-.user-profile-count {
-margin: 16px 0;
-color: var(--text-secondary);
-font-size: 13px;
-}
-.user-profile-admin-action {
-width: 100%;
-margin-top: 4px;
-padding: 10px 12px;
-border-radius: 9px;
-background: var(--accent-blue);
-color: white;
-font-weight: 700;
-}
-.user-profile-close {
-position: absolute;
-top: 12px;
-right: 12px;
-padding: 6px 10px;
-color: var(--text-secondary);
-font-size: 20px;
-}
+.account-centre-overlay { z-index:1210; }
+.settings-overlay.open,.account-centre-overlay.open { display:block; }
+.settings-page,.account-centre-page { width:min(100%,760px); min-height:100vh; margin:0 auto; padding:0 20px 40px; }
+.settings-topbar,.accounts-topbar { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:18px; height:58px; border-bottom:1px solid var(--border-subtle); background:var(--bg-primary); }
+.settings-topbar h2,.accounts-topbar h2 { font-size:18px; }
+.settings-back { font-size:24px; }
+.settings-section-label { margin:24px 0 10px; color:var(--text-secondary); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+.settings-row { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; padding:16px 14px; border:1px solid var(--border-subtle); border-radius:12px; text-align:left; }
+.settings-row:hover { background:var(--bg-hover); }
+.settings-row-title { display:block; font-size:15px; font-weight:650; }
+.settings-row-description { display:block; margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:1.45; }
+.accounts-brand { display:flex; align-items:center; gap:10px; margin:22px 0; font-size:22px; font-weight:750; }
+.accounts-brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; background:linear-gradient(135deg,#0866ff,#8a3ffc); color:#fff; font-size:18px; }
+.account-centre-note { padding:14px; border-radius:12px; background:var(--bg-secondary); color:var(--text-secondary); font-size:13px; line-height:1.5; }
+.account-link-card { margin-top:14px; padding:16px; border:1px solid var(--border-subtle); border-radius:14px; }
+.account-link-heading { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:15px; font-weight:700; }
+.account-link-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; color:#fff; font-size:16px; font-weight:800; }
+.account-link-icon.instagram { background:linear-gradient(135deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5); }
+.account-link-icon.facebook { background:#0866ff; }
+.account-link-status { margin:5px 0 12px; color:var(--text-secondary); font-size:12px; }
+.account-link-form { display:flex; gap:8px; }
+.account-link-input { flex:1; min-width:0; padding:11px 12px; border:1px solid var(--border-color); border-radius:9px; background:var(--bg-primary); font-size:14px; }
+.account-link-save { min-width:82px; padding:0 14px; border-radius:9px; background:var(--accent-blue); color:#fff; font-size:13px; font-weight:700; }
+.account-link-remove { margin-top:10px; color:#d93025; font-size:13px; font-weight:600; }
+.account-centre-footnote { margin-top:18px; color:var(--text-secondary); font-size:12px; line-height:1.5; }
 .grid-tile-author {
 position: absolute;
 left: 8px;
@@ -3661,6 +3695,17 @@ left: var(--sidebar-collapsed);
 }
 
 @media (max-width: 767px) {
+
+.user-profile-card { padding: 0 12px calc(var(--mobile-nav-h) + 24px); }
+.user-profile-main { grid-template-columns: 86px minmax(0,1fr); gap:12px; padding:18px 2px 20px; }
+.user-profile-avatar { width:86px; height:86px; }
+.user-profile-counts { grid-column:1/-1; gap:14px; font-size:13px; }
+.user-profile-fullname { margin-top:8px; }
+.user-profile-grid-title { padding-top:14px; }
+.user-profile-post-grid { margin-top:0; }
+.profile-more-button { width:34px; height:34px; }
+.account-link-form { align-items:stretch; }
+.account-link-save { min-width:76px; padding:0 10px; }
 
 .sidebar {
 
@@ -4402,6 +4447,13 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <h2 class="profile-handle" id="profileMainHandle">nirav_rokde</h2>
 
+<div class="profile-menu-wrap">
+<button class="profile-more-button" type="button" id="profileMoreButton" aria-label="More profile options" aria-expanded="false" onclick="toggleProfileMoreMenu(event)">⋯</button>
+<div class="profile-more-menu" id="profileMoreMenu">
+<button type="button" onclick="openSettingsPage()">Settings</button>
+</div>
+</div>
+
 </div>
 
 <div class="profile-stats-row">
@@ -4428,7 +4480,9 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <div id="profileBioText" style="white-space: pre-line; margin: 4px 0;"></div>
 
-<a href="https://niravrokde.netlify.app" target="_blank" class="profile-bio-link" id="profileWebsiteLink">niravrokde.netlify.app</a>
+<a href="https://niravrokde.netlify.app" target="_blank" rel="noopener noreferrer" class="profile-bio-link" id="profileWebsiteLink">niravrokde.netlify.app</a>
+
+<div class="profile-social-links" id="profileSocialLinks"></div>
 
 </div>
 
@@ -4732,10 +4786,41 @@ POST DETAIL MODAL (FOR EXPLORE & PROFILE CLICKS)
 
 </div>
 
-<div class="user-profile-modal" id="userProfileModal" role="dialog" aria-modal="true" aria-label="Profile" onclick="if(event.target===this) closeUserProfile()">
+<div class="user-profile-modal" id="userProfileModal" role="dialog" aria-modal="true" aria-label="Profile">
 
-<div class="user-profile-card" id="userProfileCard" style="position:relative;"></div>
+<div class="user-profile-card" id="userProfileCard"></div>
 
+</div>
+
+<div class="settings-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" onclick="if(event.target===this) closeSettingsPage()">
+<div class="settings-page">
+<div class="settings-topbar"><button class="settings-back" type="button" aria-label="Back" onclick="closeSettingsPage()">‹</button><h2>Settings</h2></div>
+<div class="settings-section-label">Your account</div>
+<button class="settings-row" type="button" onclick="openAccountCentre()">
+<span><span class="settings-row-title">Accounts Centre</span><span class="settings-row-description">Manage linked profile links for Instagram and Facebook</span></span><span aria-hidden="true">›</span>
+</button>
+</div>
+</div>
+
+<div class="account-centre-overlay" id="accountCentreOverlay" role="dialog" aria-modal="true" aria-label="Accounts Centre" onclick="if(event.target===this) closeAccountCentre()">
+<div class="account-centre-page">
+<div class="accounts-topbar"><button class="settings-back" type="button" aria-label="Back to settings" onclick="closeAccountCentre()">‹</button><h2>Accounts Centre</h2></div>
+<div class="accounts-brand"><span class="accounts-brand-mark" aria-hidden="true">∞</span><span>Accounts Centre</span></div>
+<p class="account-centre-note">Add your Instagram or Facebook profile link so people can open your real profile from NXgram.</p>
+<div class="account-link-card">
+<div class="account-link-heading"><span class="account-link-icon instagram" aria-hidden="true">◎</span><span>Instagram</span></div>
+<div class="account-link-status" id="instagramLinkStatus">No Instagram profile link saved.</div>
+<form class="account-link-form" onsubmit="saveConnectedProfile(event,'instagram')"><input class="account-link-input" id="instagramProfileInput" type="text" autocomplete="off" placeholder="e.g. the_master_908 or Instagram URL" aria-label="Instagram username or profile URL"><button class="account-link-save" type="submit">Save link</button></form>
+<button class="account-link-remove" id="instagramRemoveButton" type="button" onclick="removeConnectedProfile('instagram')" hidden>Remove link</button>
+</div>
+<div class="account-link-card">
+<div class="account-link-heading"><span class="account-link-icon facebook" aria-hidden="true">f</span><span>Facebook</span></div>
+<div class="account-link-status" id="facebookLinkStatus">No Facebook profile link saved.</div>
+<form class="account-link-form" onsubmit="saveConnectedProfile(event,'facebook')"><input class="account-link-input" id="facebookProfileInput" type="text" autocomplete="off" placeholder="Username or facebook.com/profile" aria-label="Facebook username or profile URL"><button class="account-link-save" type="submit">Save link</button></form>
+<button class="account-link-remove" id="facebookRemoveButton" type="button" onclick="removeConnectedProfile('facebook')" hidden>Remove link</button>
+</div>
+<p class="account-centre-footnote">These are profile links only. NXgram does not sign in to or connect with Meta, Instagram, or Facebook. Links are saved on this device and open in a new tab.</p>
+</div>
 </div>
 
 <!--
@@ -5423,6 +5508,7 @@ notifications: [
 let appState = JSON.parse(localStorage.getItem("insta_clone_state_v1")) || DEFAULT_STATE;
 
 if (!appState.localVerification || typeof appState.localVerification !== "object" || Array.isArray(appState.localVerification)) appState.localVerification = {};
+if (!appState.currentUser.connectedProfiles || typeof appState.currentUser.connectedProfiles !== "object" || Array.isArray(appState.currentUser.connectedProfiles)) appState.currentUser.connectedProfiles = {};
 
 let currentExploreCategory = "all";
 
@@ -5654,21 +5740,36 @@ return `<button type="button" class="${className}" data-profile-user="${escapeHT
 
 function findUserInfo(username) {
 
-const normalized = String(username || "").toLowerCase();
+const normalized = String(username || "").trim().toLowerCase();
 
-if (normalized === String(appState.currentUser.username || "").toLowerCase()) return { username: appState.currentUser.username, fullName: appState.currentUser.fullName, avatar: appState.currentUser.avatar };
+if (normalized === String(appState.currentUser.username || "").trim().toLowerCase()) return { ...appState.currentUser };
 
 const sources = [appState.stories, appState.posts, appState.exploreExtras, appState.reels, appState.suggestions, appState.chats, appState.notifications];
 
 for (const source of sources) {
 
-const user = source.find(item => String(item.username || item.user || "").toLowerCase() === normalized);
+const user = source.find(item => String(item.username || item.user || "").trim().toLowerCase() === normalized);
 
-if (user) return { username: user.username || user.user, fullName: user.fullName || user.username || user.user, avatar: user.avatar || user.userAvatar || "" };
+if (user) return {
+username: user.username || user.user || String(username || ""),
+fullName: user.fullName || user.name || user.username || user.user || String(username || ""),
+avatar: user.avatar || user.userAvatar || "",
+bio: user.bio || "",
+website: user.website || "",
+followers: Number.isFinite(Number(user.followers)) ? Number(user.followers) : null,
+following: Number.isFinite(Number(user.following)) ? Number(user.following) : null,
+connectedProfiles: user.connectedProfiles || {}
+};
 
 }
 
-return { username: String(username || ""), fullName: String(username || ""), avatar: "" };
+return { username: String(username || ""), fullName: String(username || ""), avatar: "", bio: "", website: "", followers: null, following: null, connectedProfiles: {} };
+
+}
+
+function profileCountText(value) {
+
+return value === null || value === undefined || !Number.isFinite(Number(value)) ? "—" : Number(value).toLocaleString();
 
 }
 
@@ -5676,32 +5777,54 @@ function openUserProfile(username) {
 
 const info = findUserInfo(username);
 
-const authoredPosts = [...appState.posts, ...appState.exploreExtras].filter(post => String(post.username).toLowerCase() === String(info.username).toLowerCase());
+const normalized = String(info.username || "").trim().toLowerCase();
 
-const isOwnProfile = String(info.username).toLowerCase() === String(appState.currentUser.username).toLowerCase();
+if (!normalized) return;
 
-const adminAction = isAdminUser() && !isOwnProfile
+const authoredPosts = [...appState.posts, ...appState.exploreExtras].filter(post => String(post.username || "").trim().toLowerCase() === normalized);
+
+const isOwnProfile = normalized === String(appState.currentUser.username || "").trim().toLowerCase();
+
+if (isOwnProfile) {
+closeUserProfile();
+switchView("profile");
+return;
+}
+
+const adminAction = isAdminUser()
 ? `<button type="button" class="user-profile-admin-action" id="userProfileVerifyButton">${isVerifiedUser(info.username) ? "Remove blue tick" : "Give blue tick"}</button>`
 : "";
 
 const avatar = info.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&q=80";
 
+const postsGrid = authoredPosts.length ? authoredPosts.map(post => `
+<button type="button" class="explore-grid-item" onclick="openPostDetail('${escapeHTML(post.id)}')" aria-label="Open post by ${escapeHTML(info.username)}">
+<img src="${escapeHTML(post.image || avatar)}" alt="Post by ${escapeHTML(info.username)}">
+<span class="grid-tile-overlay"><span>♥ ${profileCountText(post.likes)}</span></span>
+</button>
+`).join("") : `<div class="user-profile-empty">No posts to display yet.</div>`;
+
+const socialUrls = info.connectedProfiles && typeof info.connectedProfiles === "object" ? info.connectedProfiles : {};
+const socials = ["instagram", "facebook"].filter(type => socialUrls[type] && isApprovedProfileUrl(type, socialUrls[type])).map(type => `<a href="${escapeHTML(socialUrls[type])}" target="_blank" rel="noopener noreferrer">${type === "instagram" ? "Instagram" : "Facebook"}</a>`).join("");
+const website = info.website && safeExternalUrl(info.website) ? `<div class="user-profile-socials"><a href="${escapeHTML(safeExternalUrl(info.website))}" target="_blank" rel="noopener noreferrer">${escapeHTML(info.website)}</a></div>` : "";
+
 const card = document.getElementById("userProfileCard");
 
 card.innerHTML = `
-
-<button type="button" class="user-profile-close" aria-label="Close profile" onclick="closeUserProfile()">×</button>
-
-<img src="${escapeHTML(avatar)}" alt="${escapeHTML(info.username)} profile photo">
-
+<div class="user-profile-topbar"><button type="button" class="user-profile-back" aria-label="Back to feed" onclick="closeUserProfile()"><span aria-hidden="true">‹</span><span>Profile</span></button></div>
+<div class="user-profile-main">
+<img class="user-profile-avatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(info.username)} profile photo">
+<div class="user-profile-information">
 <div class="user-profile-handle">${escapeHTML(info.username)}${verifiedBadgeFor(info.username)}</div>
-
-<div class="user-profile-fullname">${escapeHTML(info.fullName)}</div>
-
-<div class="user-profile-count">${authoredPosts.length} posts</div>
-
+<div class="user-profile-counts"><span><strong>${authoredPosts.length}</strong> posts</span><span><strong>${profileCountText(info.followers)}</strong> followers</span><span><strong>${profileCountText(info.following)}</strong> following</span></div>
+<div class="user-profile-fullname">${escapeHTML(info.fullName || info.username)}</div>
+${info.bio ? `<div class="user-profile-bio">${escapeHTML(info.bio)}</div>` : ""}
+${website}${socials ? `<div class="user-profile-socials">${socials}</div>` : ""}
 ${adminAction}
-
+</div>
+</div>
+<div class="user-profile-grid-title">▦ &nbsp; POSTS</div>
+<div class="explore-grid user-profile-post-grid">${postsGrid}</div>
 `;
 
 const action = document.getElementById("userProfileVerifyButton");
@@ -5709,6 +5832,7 @@ const action = document.getElementById("userProfileVerifyButton");
 if (action) action.addEventListener("click", () => toggleUserVerification(info.username));
 
 document.getElementById("userProfileModal").classList.add("open");
+document.getElementById("userProfileModal").scrollTop = 0;
 
 }
 
@@ -5716,6 +5840,134 @@ function closeUserProfile() {
 
 document.getElementById("userProfileModal").classList.remove("open");
 
+document.getElementById("userProfileCard").innerHTML = "";
+
+}
+
+function toggleProfileMoreMenu(event) {
+
+if (event) event.stopPropagation();
+const menu = document.getElementById("profileMoreMenu");
+const open = menu.classList.toggle("open");
+document.getElementById("profileMoreButton").setAttribute("aria-expanded", String(open));
+
+}
+
+function closeProfileMoreMenu() {
+const menu = document.getElementById("profileMoreMenu");
+if (menu) menu.classList.remove("open");
+const button = document.getElementById("profileMoreButton");
+if (button) button.setAttribute("aria-expanded", "false");
+}
+
+function openSettingsPage() {
+closeProfileMoreMenu();
+document.getElementById("settingsOverlay").classList.add("open");
+}
+
+function closeSettingsPage() {
+document.getElementById("settingsOverlay").classList.remove("open");
+document.getElementById("accountCentreOverlay").classList.remove("open");
+}
+
+function openAccountCentre() {
+document.getElementById("settingsOverlay").classList.remove("open");
+renderAccountCentre();
+document.getElementById("accountCentreOverlay").classList.add("open");
+}
+
+function closeAccountCentre() {
+document.getElementById("accountCentreOverlay").classList.remove("open");
+document.getElementById("settingsOverlay").classList.add("open");
+}
+
+function getConnectedProfiles() {
+const profiles = appState.currentUser.connectedProfiles;
+if (!profiles || typeof profiles !== "object" || Array.isArray(profiles)) appState.currentUser.connectedProfiles = {};
+return appState.currentUser.connectedProfiles;
+}
+
+function isApprovedProfileUrl(type, value) {
+try {
+const url = new URL(value);
+const host = url.hostname.toLowerCase();
+if (url.protocol !== "https:") return false;
+if (type === "instagram") return host === "instagram.com" || host.endsWith(".instagram.com");
+if (type === "facebook") return host === "facebook.com" || host.endsWith(".facebook.com");
+} catch (error) {}
+return false;
+}
+
+function safeExternalUrl(value) {
+try {
+const url = new URL(String(value || "").startsWith("http") ? value : `https://${value}`);
+if (url.protocol !== "https:" || !url.hostname.includes(".")) return "";
+return url.href;
+} catch (error) { return ""; }
+}
+
+function normalizeProfileLink(type, rawValue) {
+const raw = String(rawValue || "").trim();
+if (!raw) return "";
+if (/^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.includes("/")) {
+const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw.replace(/^\/+/, "")}`;
+try {
+const url = new URL(candidate);
+if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return "";
+url.protocol = "https:";
+if (!isApprovedProfileUrl(type, url.href)) return "";
+if (type === "instagram" && !/^\/[A-Za-z0-9._]+\/?$/.test(url.pathname)) return "";
+if (type === "facebook" && url.pathname === "/") return "";
+return url.href;
+} catch (error) { return ""; }
+}
+const handle = raw.replace(/^@/, "");
+const valid = type === "instagram" ? /^[A-Za-z0-9._]{1,30}$/.test(handle) : /^[A-Za-z0-9.\-_]{1,100}$/.test(handle);
+if (!valid) return "";
+return type === "instagram" ? `https://www.instagram.com/${handle}/` : `https://www.facebook.com/${handle}`;
+}
+
+function renderConnectedProfileLinks() {
+const container = document.getElementById("profileSocialLinks");
+if (!container) return;
+const profiles = getConnectedProfiles();
+container.innerHTML = ["instagram", "facebook"].filter(type => profiles[type] && isApprovedProfileUrl(type, profiles[type])).map(type => `<a class="profile-social-link" href="${escapeHTML(profiles[type])}" target="_blank" rel="noopener noreferrer">${type === "instagram" ? "Instagram" : "Facebook"}</a>`).join("");
+}
+
+function renderAccountCentre() {
+const profiles = getConnectedProfiles();
+["instagram", "facebook"].forEach(type => {
+const url = profiles[type] && isApprovedProfileUrl(type, profiles[type]) ? profiles[type] : "";
+const input = document.getElementById(`${type}ProfileInput`);
+const status = document.getElementById(`${type}LinkStatus`);
+const remove = document.getElementById(`${type}RemoveButton`);
+input.value = url;
+status.textContent = url ? `Profile link saved on this device: ${url}` : `No ${type === "instagram" ? "Instagram" : "Facebook"} profile link saved.`;
+remove.hidden = !url;
+});
+}
+
+function saveConnectedProfile(event, type) {
+event.preventDefault();
+const url = normalizeProfileLink(type, document.getElementById(`${type}ProfileInput`).value);
+if (!url) {
+showToast(`Enter a valid ${type === "instagram" ? "Instagram" : "Facebook"} username or profile URL.`);
+return;
+}
+getConnectedProfiles()[type] = url;
+saveState();
+renderAccountCentre();
+renderConnectedProfileLinks();
+showToast(`${type === "instagram" ? "Instagram" : "Facebook"} profile link saved on this device.`);
+}
+
+function removeConnectedProfile(type) {
+const profiles = getConnectedProfiles();
+delete profiles[type];
+saveState();
+renderAccountCentre();
+renderConnectedProfileLinks();
+showToast(`${type === "instagram" ? "Instagram" : "Facebook"} profile link removed.`);
 }
 
 function toggleUserVerification(username) {
@@ -5760,9 +6012,9 @@ const container = document.getElementById("storiesTray");
 
 container.innerHTML = appState.stories.map((story, idx) => `
 
-<div class="story-item" onclick="openStoryViewer(${idx})">
+<div class="story-item">
 
-<div class="story-ring ${story.isOwn ? 'own' : (story.seen ? 'seen' : '')}">
+<div class="story-ring ${story.isOwn ? 'own' : (story.seen ? 'seen' : '')}" onclick="openStoryViewer(${idx})">
 
 <img class="story-avatar" src="${story.isOwn ? appState.currentUser.avatar : story.avatar}" alt="${story.username}">
 
@@ -6676,6 +6928,8 @@ document.getElementById("profileWebsiteLink").textContent = u.website;
 
 document.getElementById("profileWebsiteLink").href = u.website.startsWith("http") ? u.website : "https://" + u.website;
 
+renderConnectedProfileLinks();
+
 // Highlights
 
 document.getElementById("profileHighlightsRow").innerHTML = appState.highlights.map((h, i) => `
@@ -7529,6 +7783,8 @@ NXgramLocalAuth.init();
 
 document.addEventListener("click", event => {
 
+if (!event.target.closest(".profile-menu-wrap")) closeProfileMoreMenu();
+
 const profileButton = event.target.closest("[data-profile-user]");
 
 if (profileButton) {
@@ -7541,7 +7797,7 @@ openUserProfile(profileButton.dataset.profileUser);
 
 }
 
-});
+}, true);
 
 syncUserAvatars();
 
