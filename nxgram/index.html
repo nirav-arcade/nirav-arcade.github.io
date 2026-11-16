@@ -2195,15 +2195,25 @@ border: 4px solid var(--bg-primary);
 
 flex: 1;
 
-display: flex;
+display: grid;
 
-flex-direction: column;
+grid-template-columns: max-content minmax(0, 1fr);
+
+grid-template-areas:
+
+"handle actions"
+
+"stats stats"
+
+"bio bio";
 
 gap: 16px;
 
 }
 
 .profile-top-row {
+
+grid-area: handle;
 
 display: flex;
 
@@ -2212,6 +2222,18 @@ align-items: center;
 gap: 16px;
 
 flex-wrap: wrap;
+
+}
+
+.profile-actions-row {
+
+grid-area: actions;
+
+display: flex;
+
+align-items: center;
+
+gap: 16px;
 
 }
 
@@ -2271,6 +2293,8 @@ background-color: var(--accent-blue-hover);
 
 .profile-stats-row {
 
+grid-area: stats;
+
 display: flex;
 
 gap: 36px;
@@ -2286,6 +2310,8 @@ font-weight: 600;
 }
 
 .profile-bio-block {
+
+grid-area: bio;
 
 font-size: 14px;
 
@@ -3147,19 +3173,73 @@ padding-right: 10px;
 
 .profile-header-section {
 
-flex-direction: column;
+display: grid;
 
-align-items: flex-start;
+grid-template-columns: 86px minmax(0, 1fr);
 
-gap: 20px;
+grid-template-areas:
+
+"photo handle"
+
+"stats stats"
+
+"actions actions"
+
+"bio bio";
+
+align-items: center;
+
+gap: 12px;
+
+margin-bottom: 36px;
+
+padding: 0;
 
 }
 
 .profile-pic-container {
 
+grid-area: photo;
+
 width: 86px;
 
 height: 86px;
+
+}
+
+.profile-details {
+
+display: contents;
+
+}
+
+.profile-top-row {
+
+grid-area: handle;
+
+min-width: 0;
+
+}
+
+.profile-stats-row {
+
+grid-area: stats;
+
+flex-wrap: wrap;
+
+gap: 16px;
+
+}
+
+.profile-actions-row {
+
+grid-area: actions;
+
+}
+
+.profile-bio-block {
+
+grid-area: bio;
 
 }
 
@@ -3705,10 +3785,6 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <h2 class="profile-handle" id="profileMainHandle">nirav_rokde</h2>
 
-<button class="btn-secondary" onclick="openEditProfileModal()">Edit profile</button>
-
-<button class="btn-secondary" onclick="shareProfileLink()">Share profile</button>
-
 </div>
 
 <div class="profile-stats-row">
@@ -3718,6 +3794,14 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 <span><strong id="profileFollowersCount">1,420</strong> followers</span>
 
 <span><strong id="profileFollowingCount">318</strong> following</span>
+
+</div>
+
+<div class="profile-actions-row">
+
+<button class="btn-secondary" onclick="openEditProfileModal()">Edit profile</button>
+
+<button class="btn-secondary" onclick="shareProfileLink()">Share profile</button>
 
 </div>
 
