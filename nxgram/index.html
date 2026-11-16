@@ -3958,7 +3958,7 @@ max-width: 100%;
 
 <label class="auth-label" for="authPassword">Password</label>
 
-<input class="auth-input" id="authPassword" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
+<input class="auth-input" id="authPassword" name="password" type="password" autocomplete="new-password" required placeholder="At least 6 characters">
 
 </div>
 
@@ -7671,7 +7671,7 @@ window.__nxSetMode=function(m){mode=m==="login"?"login":"signup";const su=mode==
  $("authSignupTab").classList.toggle("active",su);$("authLoginTab").classList.toggle("active",!su);
  $("authSignupTab").setAttribute("aria-selected",String(su));$("authLoginTab").setAttribute("aria-selected",String(!su));
  $("authSubtitle").textContent=su?"A little space for your people.":"Welcome back to NXgram.";
- $("authSubmitButton").textContent=su?"Create account":"Log in";showMsg("");};
+ $("authSubmitButton").textContent=su?"Create account":"Log in";$("authPassword").placeholder=su?"At least 6 characters":"Your password";$("authPassword").setAttribute("autocomplete",su?"new-password":"current-password");showMsg("");};
 function fail(e){const c=e.code||"";showMsg(c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found")?"Wrong username or password.":c.includes("weak-password")?"Password is too weak (min 6 characters).":c.includes("too-many")?"Too many tries, wait a bit.":c.includes("permission")?"That username is taken. Try another one.":(e.message||"Something went wrong"));}
 window.__nxSubmit=async function(){
  const u=$("authUsername").value.trim().toLowerCase(),p=$("authPassword").value;
