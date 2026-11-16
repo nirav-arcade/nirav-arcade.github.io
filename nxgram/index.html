@@ -6279,6 +6279,18 @@ ${n.postImg ? `<img class="notif-post-thumb" src="${n.postImg}" alt="Post">` : `
 
 }
 
+function registerServiceWorker() {
+
+if (!("serviceWorker" in navigator)) return;
+
+navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(error => {
+
+console.warn("Service worker registration failed:", error);
+
+});
+
+}
+
 /* ------------------------------------------------------------------------
 
 13. APP BOOTSTRAP
@@ -6304,6 +6316,8 @@ renderStories();
 renderFeed();
 
 renderSuggestions();
+
+registerServiceWorker();
 
 });
 
