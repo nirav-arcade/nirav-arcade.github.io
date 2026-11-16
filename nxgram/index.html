@@ -4467,9 +4467,10 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <span><strong id="profilePostsCount">0</strong> posts</span>
 
-<span><strong id="profileFollowersCount">1,420</strong> followers</span>
+<span><strong id="profileFollowersCount">0</strong> followers</span>
+<span><strong id="profileSubsCount">0</strong> subscribers</span>
 
-<span><strong id="profileFollowingCount">318</strong> following</span>
+
 
 </div>
 
@@ -5831,7 +5832,7 @@ card.innerHTML = `
 <img class="user-profile-avatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(info.username)} profile photo">
 <div class="user-profile-information">
 <div class="user-profile-handle">${escapeHTML(info.username)}${verifiedBadgeFor(info.username)}</div>
-<div class="user-profile-counts"><span><strong>${authoredPosts.length}</strong> posts</span><span><strong>${profileCountText(info.followers)}</strong> followers</span><span><strong>${profileCountText(info.following)}</strong> following</span></div>
+<div class="user-profile-counts"><span><strong>${authoredPosts.length}</strong> posts</span><span><strong>${profileCountText(info.followers)}</strong> followers</span><span><strong>${profileCountText(info.following)}</strong> subscribers</span></div>
 <div class="user-profile-fullname">${escapeHTML(info.fullName || info.username)}</div>
 ${info.bio ? `<div class="user-profile-bio">${escapeHTML(info.bio)}</div>` : ""}
 ${website}${socials ? `<div class="user-profile-socials">${socials}</div>` : ""}
@@ -6933,7 +6934,7 @@ document.getElementById("profilePostsCount").textContent = myPosts.length;
 
 document.getElementById("profileFollowersCount").textContent = u.followers.toLocaleString();
 
-document.getElementById("profileFollowingCount").textContent = u.following.toLocaleString();
+
 
 document.getElementById("profileFullName").textContent = u.fullName;
 
@@ -7635,7 +7636,7 @@ body.dark-mode #nxAuth .box{background:#121212;border-color:#262626}
 #view-profile .profile-pic-container img{width:92px;height:92px}
 #view-profile .profile-bio-block{display:contents}
 #view-profile .profile-bio-name{grid-column:2;grid-row:2;align-self:end;font-size:17px;font-weight:700;margin:0}
-#view-profile .profile-stats-row{grid-area:auto;grid-column:2;grid-row:3;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:6px;align-self:start}
+#view-profile .profile-stats-row{grid-area:auto;grid-column:2;grid-row:3;display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:22px;align-self:start}
 #view-profile .profile-stats-row span{display:flex;flex-direction:column;align-items:center;font-size:13px;line-height:1.25;color:var(--text-primary)}
 #view-profile .profile-stats-row strong{font-size:21px;font-weight:800}
 #view-profile #profileBioText{grid-column:1/-1;grid-row:4;font-size:14px;line-height:1.4;margin:6px 0 0}
@@ -7653,6 +7654,20 @@ body.dark-mode #nxAuth .box{background:#121212;border-color:#262626}
 #nxMembers h3{margin:0 0 4px}#nxMembers .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #efefef;font-size:14px}
 #nxMembers .row small{color:#8e8e8e;margin-left:auto}#nxMembers button{margin-top:12px;margin-right:8px;padding:7px 14px;border:0;border-radius:8px;cursor:pointer;font-weight:600}
 </style>
+<style>
+.nxBtnRow{display:flex;gap:8px;margin:6px 0 8px}.nxBtnRow .nxFollowBtn{flex:1;margin:0}.nxFollowBtn{padding:8px 14px;border-radius:8px;font-weight:700;font-size:14px;background:#0095f6;color:#fff;border:0;cursor:pointer}
+.nxFollowBtn.on{background:var(--bg-secondary,#efefef);color:var(--text-primary,#000)}
+
+.nxClickable{cursor:pointer}
+.profile-stats-row{justify-content:flex-start}
+#nxFollowList{position:fixed;inset:0;z-index:110000;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center}
+#nxFollowList .box{background:var(--bg-primary,#fff);color:var(--text-primary,#262626);width:100%;max-width:440px;max-height:75vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 16px 24px}
+#nxFollowList h3{margin:0 0 8px;text-align:center;font-size:16px}
+#nxFollowList .row{display:flex;align-items:center;gap:12px;padding:9px 0;cursor:pointer}
+#nxFollowList .row img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+#nxFollowList .row b{font-size:14px}#nxFollowList .row span{display:block;color:#8e8e8e;font-size:13px}
+</style>
+<div id="nxFollowList"><div class="box"><h3 id="nxFLTitle"></h3><div id="nxFLRows"></div></div></div>
 <button id="nxMembersBtn">👥 Members</button>
 <div id="nxMembers"><div class="box"><h3 id="nxMTitle">Members</h3><div id="nxMList"></div><button id="nxMClose">Close</button><button id="nxLogout" style="background:#ed4956;color:#fff">Log out</button><button id="nxDelete" style="background:#eee;color:#8e8e8e">Delete my account</button></div></div>
 <script type="module">
@@ -7700,7 +7715,7 @@ async function boot(user){
  let d=cached;
  if(!d){const snap=await docP;d=snap.exists()?snap.data():{username:(user.email||"user").split("@")[0],fullName:""};if(d.createdAt)d.createdAt=null;}
  me={uid:user.uid,...d};
- const applyMe=()=>{appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:me.avatar||avatarFor(me.username),bio:me.bio||"",website:me.website||"",followers:0,following:0,connectedProfiles:(appState.currentUser&&appState.currentUser.connectedProfiles)||{}};};
+ const applyMe=()=>{appState.currentUser={username:me.username,fullName:me.fullName||me.username,avatar:me.avatar||avatarFor(me.username),bio:me.bio||"",website:me.website||"",followers:myFollowers,following:0,connectedProfiles:(appState.currentUser&&appState.currentUser.connectedProfiles)||{}};};
  applyMe();
  const saveCache=()=>{try{localStorage.setItem(ck,JSON.stringify({username:me.username,fullName:me.fullName,bio:me.bio,website:me.website,avatar:me.avatar}));}catch(e){}};
  docP.then(async snap=>{if(!snap.exists())return;const x=snap.data();me={...me,username:x.username||me.username,fullName:x.fullName,bio:x.bio,website:x.website,avatar:x.avatar};
@@ -7709,6 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7724,9 +7740,10 @@ function rebuild(){
  try{if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}
 }
 function renderMembers(list){
+ window.__nxMembersList=list;
  list.sort((a,b)=>(a.createdAt?.toMillis?.()||0)-(b.createdAt?.toMillis?.()||0));
  $("nxMTitle").textContent="Members ("+list.length+")";$("nxMembersBtn").textContent="👥 Members ("+list.length+")";
- $("nxMList").innerHTML=list.map(u=>`<div class="row"><img src="${(typeof u.avatar==="string"&&u.avatar.startsWith("data:image/jpeg"))?u.avatar:avatarFor(u.username||"?")}" width="36" style="object-fit:cover;border-radius:50%" height="36"><div><b>@${esc(u.username)}</b><br><span style="color:#8e8e8e">${esc(u.fullName||"")}</span></div><small>${u.createdAt?new Date(u.createdAt.toMillis()).toLocaleDateString():""}</small></div>`).join("");
+ $("nxMList").innerHTML=list.map(u=>`<div class="row"><img src="${(typeof u.avatar==="string"&&u.avatar.startsWith("data:image/jpeg"))?u.avatar:avatarFor(u.username||"?")}" width="36" style="object-fit:cover;border-radius:50%" height="36"><div><b>@${esc(u.username)}${verifiedBadgeFor(u.username)}</b><br><span style="color:#8e8e8e">${esc(u.fullName||"")}</span></div><small>${u.createdAt?new Date(u.createdAt.toMillis()).toLocaleDateString():""}</small><button data-vtoggle="1" data-vuid="${u.id}" data-vname="${esc(u.username)}" style="margin:0 0 0 8px;padding:5px 10px;font-size:12px;background:${isVerifiedUser(u.username)?"#efefef":"#0095f6"};color:${isVerifiedUser(u.username)?"#262626":"#fff"}">${isVerifiedUser(u.username)?"Remove tick":"Give tick"}</button></div>`).join("");
 }
 $("nxMembersBtn").onclick=()=>{$("nxMembers").style.display="flex";};
 $("nxMClose").onclick=()=>{$("nxMembers").style.display="none";};
@@ -7737,6 +7754,67 @@ $("nxDelete").onclick=async()=>{
   await deleteDoc(doc(db,"users",me.uid));
   unsubs.forEach(f=>f());unsubs=[];await deleteUser(auth.currentUser);me=null;$("nxMembers").style.display="none";$("nxMembersBtn").style.display="none";document.body.classList.add("auth-locked");
  }catch(e){alert("Couldn't delete: "+(e.message||e));}};
+
+// ---- follow system ----
+let myFollowers=0,mySubs=0,profUnsubs=[],profToken=0;
+const avOf=u=>(u&&typeof u.avatar==="string"&&u.avatar.startsWith("data:image/jpeg"))?u.avatar:avatarFor((u&&u.username)||"?");
+function refreshOwnCounts(){if(!appState.currentUser)return;appState.currentUser.followers=myFollowers;
+ const a=document.getElementById("profileFollowersCount");if(a)a.textContent=myFollowers.toLocaleString();
+ const b=document.getElementById("profileSubsCount");if(b)b.textContent=mySubs.toLocaleString();}
+function startOwnFollowListeners(){
+ unsubs.push(onSnapshot(query(collection(db,"follows"),where("followee","==",me.uid)),qs=>{myFollowers=qs.size;refreshOwnCounts();}));
+ unsubs.push(onSnapshot(query(collection(db,"subs"),where("followee","==",me.uid)),qs=>{mySubs=qs.size;refreshOwnCounts();}));
+}
+window.__nxStartFollow=startOwnFollowListeners;
+async function showFollowList(uid,col){
+ $("nxFLTitle").textContent=col==="subs"?"Subscribers":"Followers";$("nxFLRows").innerHTML='<div style="text-align:center;color:#8e8e8e;padding:20px">Loading...</div>';$("nxFollowList").style.display="flex";
+ try{
+  const qs=await getDocs(query(collection(db,col),where("followee","==",uid)));
+  const rows=await Promise.all(qs.docs.map(async d=>{const ou=d.data().follower;let u={username:d.data().followerName||"user"};try{const s=await getDoc(doc(db,"users",ou));if(s.exists())u=s.data();}catch(e){}return u;}));
+  $("nxFLRows").innerHTML=rows.length?rows.map(u=>`<div class="row" data-u="${esc(u.username)}"><img src="${avOf(u)}"><div><b>${esc(u.username)}${verifiedBadgeFor(u.username)}</b><span>${esc(u.fullName||"")}</span></div></div>`).join(""):'<div style="text-align:center;color:#8e8e8e;padding:20px">Nobody yet.</div>';
+ }catch(e){$("nxFLRows").innerHTML='<div style="text-align:center;color:#8e8e8e;padding:20px">Could not load.</div>';}
+}
+$("nxFollowList").addEventListener("click",e=>{const r=e.target.closest(".row");if(r){const u=r.dataset.u;$("nxFollowList").style.display="none";if(typeof closeUserProfile==="function")closeUserProfile();openUserProfile(u);return;}if(e.target.id==="nxFollowList")$("nxFollowList").style.display="none";});
+document.addEventListener("click",e=>{const sp=e.target.closest(".profile-stats-row span");if(sp&&me){if(sp.querySelector("#profileFollowersCount"))showFollowList(me.uid,"follows");else if(sp.querySelector("#profileSubsCount"))showFollowList(me.uid,"subs");}});
+const _openUP=window.openUserProfile;
+function cleanupProf(){profUnsubs.forEach(f=>f());profUnsubs=[];}
+const _closeUP=window.closeUserProfile;
+window.closeUserProfile=function(){cleanupProf();profToken++;_closeUP();};
+window.openUserProfile=async function(username){
+ cleanupProf();const tok=++profToken;_openUP(username);
+ const card=$("userProfileCard");
+ if(!card||!card.innerHTML||!me)return;
+ {const c0=card.querySelector(".user-profile-counts");if(c0){const sp=c0.querySelectorAll("span");if(sp[1])sp[1].innerHTML="<strong>0</strong> followers";if(sp[2])sp[2].innerHTML="<strong>0</strong> subscribers";}}
+ const lower=String(username||"").trim().toLowerCase();let uid=null;
+ try{const s=await getDoc(doc(db,"usernames",lower));if(s.exists())uid=s.data().uid;}catch(e){}
+ if(!uid||uid===me.uid||tok!==profToken)return;
+ let u=null;try{const s=await getDoc(doc(db,"users",uid));if(s.exists())u=s.data();}catch(e){}
+ if(tok!==profToken)return;
+ if(u){const im=card.querySelector(".user-profile-avatar");if(im)im.src=avOf(u);const fn=card.querySelector(".user-profile-fullname");if(fn)fn.textContent=u.fullName||u.username;
+  const bio=card.querySelector(".user-profile-bio");if(bio)bio.textContent=u.bio||"";else if(u.bio){const d=document.createElement("div");d.className="user-profile-bio";d.textContent=u.bio;card.querySelector(".user-profile-fullname").after(d);}}
+ const counts=card.querySelector(".user-profile-counts");if(!counts)return;
+ const spans=counts.querySelectorAll("span");
+ const wrap=document.createElement("div");wrap.className="nxBtnRow";counts.after(wrap);
+ [["follows",spans[1],"Follow","Following"],["subs",spans[2],"Subscribe","Subscribed"]].forEach(([col,sp,off,onT])=>{
+  sp.classList.add("nxClickable");sp.onclick=()=>showFollowList(uid,col);
+  const lab=col==="subs"?"subscribers":"followers";
+  profUnsubs.push(onSnapshot(query(collection(db,col),where("followee","==",uid)),qs=>{sp.innerHTML="<strong>"+qs.size.toLocaleString()+"</strong> "+lab;}));
+  const btn=document.createElement("button");btn.className="nxFollowBtn";btn.textContent=off;wrap.appendChild(btn);
+  const fid=me.uid+"_"+uid;let on=false,busy=false;
+  profUnsubs.push(onSnapshot(doc(db,col,fid),sn=>{on=sn.exists();btn.textContent=on?onT:off;btn.classList.toggle("on",on);}));
+  btn.onclick=async()=>{if(busy)return;busy=true;try{if(on)await deleteDoc(doc(db,col,fid));else await setDoc(doc(db,col,fid),{follower:me.uid,followee:uid,followerName:me.username,followeeName:lower,createdAt:serverTimestamp()});}catch(e){showToast("Couldn't update, try again");}busy=false;};
+ });
+};
+
+// ---- verified (blue tick), admin-controlled ----
+const vSet=new Set();
+window.isVerifiedUser=function(username){const n=String(username||"").trim().toLowerCase();if(!n)return false;return REPO_VERIFIED_USERS.some(x=>x.toLowerCase()===n)||vSet.has(n);};
+let vUnsub=null;
+function startVerifiedListener(){if(vUnsub)vUnsub();vUnsub=onSnapshot(collection(db,"verified"),qs=>{vSet.clear();qs.docs.forEach(d=>vSet.add(d.id));try{rebuild();}catch(e){}try{if(window.__nxMembersList)renderMembers(window.__nxMembersList);}catch(e){}});}
+window.__nxStartVerified=startVerifiedListener;
+async function setVerified(uid,username,on){const lower=String(username).toLowerCase();try{await updateDoc(doc(db,"users",uid),{verified:!!on});if(on)await setDoc(doc(db,"verified",lower),{uid,at:serverTimestamp()});else await deleteDoc(doc(db,"verified",lower));showToast(on?"Blue tick given":"Blue tick removed");}catch(e){showToast("Couldn't update tick");}}
+window.toggleUserVerification=async function(username){if(!window.__nxIsAdmin)return;const lower=String(username||"").toLowerCase();try{const s=await getDoc(doc(db,"usernames",lower));if(!s.exists())return;await setVerified(s.data().uid,lower,!isVerifiedUser(lower));}catch(e){showToast("Couldn't update tick");}};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-vtoggle]");if(b&&window.__nxIsAdmin){e.stopPropagation();setVerified(b.dataset.vuid,b.dataset.vname,!isVerifiedUser(b.dataset.vname));}});
 const ready=()=>document.body.classList.remove("nx-booting");setTimeout(ready,8000);
 onAuthStateChanged(auth,async u=>{if(u&&!me){try{await boot(u);}catch(e){console.warn(e);}ready();}else if(!u){document.body.classList.add("auth-locked");ready();}else ready();});
 // ---- overrides ----
