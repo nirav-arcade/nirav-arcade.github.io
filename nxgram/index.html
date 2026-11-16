@@ -647,6 +647,12 @@ display: flex;
 
 }
 
+.view-section:not(.active) {
+
+display: none;
+
+}
+
 /* --- HOME VIEW --- */
 
 .home-layout {
@@ -3070,6 +3076,18 @@ margin-left: 0;
 padding-top: var(--mobile-header-h);
 
 padding-bottom: var(--mobile-nav-h);
+
+width: 100%;
+
+min-width: 0;
+
+}
+
+.view-section.active {
+
+width: 100%;
+
+min-width: 0;
 
 }
 
