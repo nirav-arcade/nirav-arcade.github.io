@@ -7905,7 +7905,7 @@ function nxGroupStories(){
  const by={};nxStories.forEach(s=>{if(!s||!s.uid)return;(by[s.uid]=by[s.uid]||[]).push(s);});
  const seen=nxGetSeen();
  return Object.keys(by).map(uid=>{const slides=by[uid].sort((a,b)=>((a.createdAt&&a.createdAt.toMillis&&a.createdAt.toMillis())||0)-((b.createdAt&&b.createdAt.toMillis&&b.createdAt.toMillis())||0));const f=slides[0];
-  return {uid,username:f.username||"user",avatar:(typeof f.avatar==="string"&&f.avatar.startsWith("data:"))?f.avatar:avatarFor(f.username||"user"),ids:slides.map(x=>x.id),seen:slides.every(x=>seen.has(x.id)),slides:slides.map(x=>({img:x.img,music:x.music||"",time:ago(x.createdAt)}))};})
+  return {uid,username:f.username||"user",avatar:(typeof f.avatar==="string"&&f.avatar.startsWith("data:"))?f.avatar:avatarFor(f.username||"user"),ids:slides.map(x=>x.id),seen:slides.every(x=>seen.has(x.id)),slides:slides.map(x=>({img:x.img,music:x.music||"",audio:(typeof x.audio==="string"&&x.audio.startsWith("data:audio"))?x.audio:"",time:ago(x.createdAt)}))};})
  .sort((a,b)=>(a.seen?1:0)-(b.seen?1:0));
 }
 function nxSyncStories(){
@@ -7952,13 +7952,14 @@ const NX_TRACKS=[
 const nxTrack=id=>NX_TRACKS.find(x=>x.id===id);
 let nxPrev=null;
 function nxStopPrev(){if(nxPrev){try{nxPrev.pause();}catch(e){}nxPrev=null;}}
-async function nxPostStory(img,music){
+async function nxPostStory(img,music,audio){
  try{
   const now=Date.now();
   const old=await getDocs(query(collection(db,"stories"),where("uid","==",me.uid)));
   for(const d of old.docs)if((d.data().expiresAt||0)<now){try{await deleteDoc(d.ref);}catch(e){}}
   const data={uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",img,createdAt:serverTimestamp(),expiresAt:now+86400000};
   if(music)data.music=music;
+  if(audio)data.audio=audio;
   await addDoc(collection(db,"stories"),data);
   showToast("Story added");
  }catch(e){showToast("Couldn't add story");}
@@ -7972,13 +7973,15 @@ function nxMusicModal(img){
  document.body.appendChild(m);
  const list=m.querySelector("#nxTrackList");
  function draw(){
-  list.innerHTML=[{id:"",t:"No music",ar:""}].concat(NX_TRACKS).map(x=>'<div data-id="'+x.id+'" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer;'+(x.id===sel?'background:rgba(0,149,246,.18);':'')+'"><span style="font-size:18px">'+(x.id?(x.id===sel?"&#9654;":"&#9835;"):"&#10006;")+'</span><span style="flex:1"><div style="font-size:14px;font-weight:600">'+x.t+'</div>'+(x.ar?'<div style="font-size:12px;opacity:.65">'+x.ar+' &middot; 25s</div>':'')+'</span>'+(x.id===sel?'<span style="color:#0095f6;font-weight:700">&#10003;</span>':'')+'</div>').join("");
-  list.querySelectorAll("[data-id]").forEach(r=>r.onclick=()=>{sel=r.dataset.id;nxStopPrev();if(sel){nxPrev=new Audio("music/"+sel+".mp3");nxPrev.volume=.8;nxPrev.play().catch(()=>{});}draw();});
+  list.innerHTML=[{id:"",t:"No music",ar:""},{id:"__up",t:"Upload your audio",ar:"max ~15 sec, small file, your responsibility"}].concat(NX_TRACKS).map(x=>'<div data-id="'+x.id+'" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer;'+((x.id===sel||(x.id==='__up'&&sel==='own'))?'background:rgba(0,149,246,.18);':'')+'"><span style="font-size:18px">'+(x.id?(x.id===sel?"&#9654;":"&#9835;"):"&#10006;")+'</span><span style="flex:1"><div style="font-size:14px;font-weight:600">'+x.t+'</div>'+(x.ar?'<div style="font-size:12px;opacity:.65">'+x.ar+' &middot; 25s</div>':'')+'</span>'+((x.id===sel||(x.id==='__up'&&sel==='own'))?'<span style="color:#0095f6;font-weight:700">&#10003;</span>':'')+'</div>').join("");
+  list.querySelectorAll("[data-id]").forEach(r=>r.onclick=()=>{sel=r.dataset.id;nxStopPrev();
+  if(sel==="__up"){const fi=document.createElement("input");fi.type="file";fi.accept="audio/*";fi.onchange=async()=>{const f=fi.files&&fi.files[0];if(!f){sel="";draw();return;}if(f.size>400000){showToast("Audio too big, pick a shorter clip");sel="";draw();return;}const du=await new Promise(res=>{const rd=new FileReader();rd.onload=()=>res(rd.result);rd.onerror=()=>res("");rd.readAsDataURL(f);});if(!du||du.indexOf("data:audio")!==0){showToast("Couldn't read audio");sel="";draw();return;}m._ownAudio=du;sel="own";nxPrev=new Audio(du);nxPrev.volume=.8;nxPrev.play().catch(()=>{});draw();};fi.click();sel="";draw();return;}
+  if(sel){nxPrev=new Audio("music/"+sel+".mp3");nxPrev.volume=.8;nxPrev.play().catch(()=>{});}draw();});
  }
  draw();
  const close=()=>{nxStopPrev();m.remove();};
  m.querySelector("#nxMusCancel").onclick=close;
- m.querySelector("#nxMusShare").onclick=async()=>{const s=sel;close();await nxPostStory(img,s);};
+ m.querySelector("#nxMusShare").onclick=async()=>{const s2=sel,oa=m._ownAudio||"";close();await nxPostStory(img,s2,oa);};
 }
 window.__nxStoryFile=async function(inp){
  const f=inp.files&&inp.files[0];inp.value="";if(!f||!me)return;
@@ -7993,13 +7996,14 @@ let nxStAudio=null,nxStAudioId="";
 setInterval(()=>{
  const ov=document.getElementById("storyViewerOverlay");
  const open=ov&&ov.classList.contains("open");
- let mid="";
- if(open){try{const g=appState.stories[activeStoryUserIdx];const sl=g&&g.slides&&g.slides[activeStorySlideIdx];mid=(sl&&sl.music)||"";}catch(e){}}
+ let mid="",slA="";
+ if(open){try{const g=appState.stories[activeStoryUserIdx];const sl=g&&g.slides&&g.slides[activeStorySlideIdx];mid=(sl&&sl.music)||"";slA=(sl&&sl.audio)||"";}catch(e){}}
+ if(mid==="own"&&!slA)mid="";
  let tag=document.getElementById("nxMusicTag");
- if(mid&&nxTrack(mid)){
+ if(mid&&(mid==="own"||nxTrack(mid))){
   if(!tag&&ov){tag=document.createElement("div");tag.id="nxMusicTag";tag.style.cssText="position:absolute;top:64px;left:14px;z-index:9;background:rgba(0,0,0,.45);color:#fff;border-radius:14px;padding:4px 10px;font-size:12px";ov.appendChild(tag);}
-  if(tag){tag.textContent="\u266B "+nxTrack(mid).t+" \u00B7 "+nxTrack(mid).ar;tag.style.display="block";}
-  if(nxStAudioId!==mid){if(nxStAudio){try{nxStAudio.pause();}catch(e){}}nxStAudio=new Audio("music/"+mid+".mp3");nxStAudio.loop=true;nxStAudio.volume=.8;nxStAudioId=mid;nxStAudio.play().catch(()=>{});}
+  if(tag){const tr=mid==="own"?{t:"Your audio",ar:""}:nxTrack(mid);tag.textContent="\u266B "+tr.t+(tr.ar?" \u00B7 "+tr.ar:"");tag.style.display="block";}
+  if(nxStAudioId!==mid){if(nxStAudio){try{nxStAudio.pause();}catch(e){}}nxStAudio=new Audio(mid==="own"?slA:"music/"+mid+".mp3");nxStAudio.loop=true;nxStAudio.volume=.8;nxStAudioId=mid;nxStAudio.play().catch(()=>{});}
   else if(nxStAudio&&nxStAudio.paused){nxStAudio.play().catch(()=>{});}
  }else{
   if(tag)tag.style.display="none";
