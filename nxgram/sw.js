@@ -1,4 +1,4 @@
-const CACHE_NAME = "nxgram-shell-v13";
+const CACHE_NAME = "nxgram-shell-v14";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -38,6 +38,7 @@ self.addEventListener("fetch", event => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.indexOf("/music/") !== -1) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

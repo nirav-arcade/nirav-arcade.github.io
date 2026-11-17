@@ -7815,7 +7815,7 @@ function nxGroupStories(){
  const by={};nxStories.forEach(s=>{if(!s||!s.uid)return;(by[s.uid]=by[s.uid]||[]).push(s);});
  const seen=nxGetSeen();
  return Object.keys(by).map(uid=>{const slides=by[uid].sort((a,b)=>((a.createdAt&&a.createdAt.toMillis&&a.createdAt.toMillis())||0)-((b.createdAt&&b.createdAt.toMillis&&b.createdAt.toMillis())||0));const f=slides[0];
-  return {uid,username:f.username||"user",avatar:(typeof f.avatar==="string"&&f.avatar.startsWith("data:"))?f.avatar:avatarFor(f.username||"user"),ids:slides.map(x=>x.id),seen:slides.every(x=>seen.has(x.id)),slides:slides.map(x=>({img:x.img,time:ago(x.createdAt)}))};})
+  return {uid,username:f.username||"user",avatar:(typeof f.avatar==="string"&&f.avatar.startsWith("data:"))?f.avatar:avatarFor(f.username||"user"),ids:slides.map(x=>x.id),seen:slides.every(x=>seen.has(x.id)),slides:slides.map(x=>({img:x.img,music:x.music||"",time:ago(x.createdAt)}))};})
  .sort((a,b)=>(a.seen?1:0)-(b.seen?1:0));
 }
 function nxSyncStories(){
@@ -7850,20 +7850,72 @@ async function nxDeleteCurrentSlide(){
  try{await deleteDoc(doc(db,"stories",id));showToast("Story deleted");}catch(e){showToast("Couldn't delete");}
  try{closeStoryViewer();}catch(e){}
 }
+const NX_TRACKS=[
+ {id:"SneakySnitch",t:"Sneaky Snitch",ar:"Kevin MacLeod"},
+ {id:"MonkeysSpinningMonkeys",t:"Monkeys Spinning Monkeys",ar:"Kevin MacLeod"},
+ {id:"Carefree",t:"Carefree",ar:"Kevin MacLeod"},
+ {id:"FluffingaDuck",t:"Fluffing a Duck",ar:"Kevin MacLeod"},
+ {id:"HappyBee",t:"Happy Bee",ar:"Kevin MacLeod"},
+ {id:"LocalForecastElevator",t:"Local Forecast",ar:"Kevin MacLeod"},
+ {id:"Wallpaper",t:"Wallpaper",ar:"Kevin MacLeod"}
+];
+const nxTrack=id=>NX_TRACKS.find(x=>x.id===id);
+let nxPrev=null;
+function nxStopPrev(){if(nxPrev){try{nxPrev.pause();}catch(e){}nxPrev=null;}}
+async function nxPostStory(img,music){
+ try{
+  const now=Date.now();
+  const old=await getDocs(query(collection(db,"stories"),where("uid","==",me.uid)));
+  for(const d of old.docs)if((d.data().expiresAt||0)<now){try{await deleteDoc(d.ref);}catch(e){}}
+  const data={uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",img,createdAt:serverTimestamp(),expiresAt:now+86400000};
+  if(music)data.music=music;
+  await addDoc(collection(db,"stories"),data);
+  showToast("Story added");
+ }catch(e){showToast("Couldn't add story");}
+}
+function nxMusicModal(img){
+ const old=document.getElementById("nxMusicModal");if(old)old.remove();
+ let sel="";
+ const m=document.createElement("div");m.id="nxMusicModal";
+ m.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:12px";
+ m.innerHTML='<div style="background:var(--bg-primary,#fff);color:var(--text-primary,#000);border-radius:14px;width:100%;max-width:380px;max-height:92vh;overflow:auto;padding:14px"><div style="font-weight:700;font-size:16px;margin-bottom:8px;text-align:center">New story</div><img src="'+img+'" style="width:100%;max-height:34vh;object-fit:contain;border-radius:10px;background:#111"><div style="font-weight:600;margin:12px 0 6px">&#9835; Music</div><div id="nxTrackList"></div><div style="font-size:11px;opacity:.6;margin-top:6px">Music by Kevin MacLeod (incompetech.com), licensed under CC BY 4.0</div><div style="display:flex;gap:8px;margin-top:12px"><button id="nxMusCancel" style="flex:1;padding:10px;border:0;border-radius:8px;background:#eee;color:#000;font-weight:600;cursor:pointer">Cancel</button><button id="nxMusShare" style="flex:1;padding:10px;border:0;border-radius:8px;background:#0095f6;color:#fff;font-weight:600;cursor:pointer">Share story</button></div></div>';
+ document.body.appendChild(m);
+ const list=m.querySelector("#nxTrackList");
+ function draw(){
+  list.innerHTML=[{id:"",t:"No music",ar:""}].concat(NX_TRACKS).map(x=>'<div data-id="'+x.id+'" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer;'+(x.id===sel?'background:rgba(0,149,246,.18);':'')+'"><span style="font-size:18px">'+(x.id?(x.id===sel?"&#9654;":"&#9835;"):"&#10006;")+'</span><span style="flex:1"><div style="font-size:14px;font-weight:600">'+x.t+'</div>'+(x.ar?'<div style="font-size:12px;opacity:.65">'+x.ar+' &middot; 25s</div>':'')+'</span>'+(x.id===sel?'<span style="color:#0095f6;font-weight:700">&#10003;</span>':'')+'</div>').join("");
+  list.querySelectorAll("[data-id]").forEach(r=>r.onclick=()=>{sel=r.dataset.id;nxStopPrev();if(sel){nxPrev=new Audio("music/"+sel+".mp3");nxPrev.volume=.8;nxPrev.play().catch(()=>{});}draw();});
+ }
+ draw();
+ const close=()=>{nxStopPrev();m.remove();};
+ m.querySelector("#nxMusCancel").onclick=close;
+ m.querySelector("#nxMusShare").onclick=async()=>{const s=sel;close();await nxPostStory(img,s);};
+}
 window.__nxStoryFile=async function(inp){
  const f=inp.files&&inp.files[0];inp.value="";if(!f||!me)return;
  const dataUrl=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>res("");r.readAsDataURL(f);});
  if(!dataUrl){showToast("Couldn't read image");return;}
  const img=await shrink(dataUrl,640,0.7);
  if(!img||img.length>900000){showToast("Image too large, try another");return;}
- try{
-  const now=Date.now();
-  const old=await getDocs(query(collection(db,"stories"),where("uid","==",me.uid)));
-  for(const d of old.docs)if((d.data().expiresAt||0)<now){try{await deleteDoc(d.ref);}catch(e){}}
-  await addDoc(collection(db,"stories"),{uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",img,createdAt:serverTimestamp(),expiresAt:now+86400000});
-  showToast("Story added");
- }catch(e){showToast("Couldn't add story");}
+ nxMusicModal(img);
 };
+// play music while a story with music is open
+let nxStAudio=null,nxStAudioId="";
+setInterval(()=>{
+ const ov=document.getElementById("storyViewerOverlay");
+ const open=ov&&ov.classList.contains("open");
+ let mid="";
+ if(open){try{const g=appState.stories[activeStoryUserIdx];const sl=g&&g.slides&&g.slides[activeStorySlideIdx];mid=(sl&&sl.music)||"";}catch(e){}}
+ let tag=document.getElementById("nxMusicTag");
+ if(mid&&nxTrack(mid)){
+  if(!tag&&ov){tag=document.createElement("div");tag.id="nxMusicTag";tag.style.cssText="position:absolute;top:64px;left:14px;z-index:9;background:rgba(0,0,0,.45);color:#fff;border-radius:14px;padding:4px 10px;font-size:12px";ov.appendChild(tag);}
+  if(tag){tag.textContent="\u266B "+nxTrack(mid).t+" \u00B7 "+nxTrack(mid).ar;tag.style.display="block";}
+  if(nxStAudioId!==mid){if(nxStAudio){try{nxStAudio.pause();}catch(e){}}nxStAudio=new Audio("music/"+mid+".mp3");nxStAudio.loop=true;nxStAudio.volume=.8;nxStAudioId=mid;nxStAudio.play().catch(()=>{});}
+  else if(nxStAudio&&nxStAudio.paused){nxStAudio.play().catch(()=>{});}
+ }else{
+  if(tag)tag.style.display="none";
+  if(nxStAudio){try{nxStAudio.pause();}catch(e){}nxStAudio=null;nxStAudioId="";}
+ }
+},400);
 // ---- saved posts (Firestore-backed) ----
 let nxSaved=new Set(),nxSaveUnsub=null;
 window.__nxStartSaves=function(){
