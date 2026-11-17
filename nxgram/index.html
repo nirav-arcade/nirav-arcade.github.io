@@ -7724,7 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
- myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();if(window.__nxStartSaves)window.__nxStartSaves();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7735,7 +7735,7 @@ async function boot(user){
  else{$("nxMembersBtn").textContent="⚙ Account";$("nxMTitle").textContent="Account";$("nxMList").innerHTML="";}
 }
 function rebuild(){
- appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:(typeof p.userAvatar==="string"&&p.userAvatar.startsWith("data:image/jpeg")?p.userAvatar:avatarFor(p.username)),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:false,caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
+ appState.posts=postsRaw.map(p=>{const lb=p.likedBy||[];return{id:p.id,username:p.username,userAvatar:(typeof p.userAvatar==="string"&&p.userAvatar.startsWith("data:image/jpeg")?p.userAvatar:avatarFor(p.username)),verified:(typeof isVerifiedUser==="function"&&isVerifiedUser(p.username)),location:esc(p.location||""),timeAgo:ago(p.createdAt),category:"tech",image:/^(data:image\/|https:)/.test(p.image||"")?p.image:"",likes:lb.length,liked:lb.includes(me.uid),saved:nxSaved.has(p.id),caption:esc(p.caption||""),comments:(commentsBy[p.id]||[]).map(c=>({user:esc(c.username),text:" "+esc(c.text)}))};});
  try{syncUserAvatars();renderStories();renderFeed();renderSuggestions();}catch(e){console.warn(e);}
  try{if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}
 }
@@ -7840,7 +7840,7 @@ window.openStoryViewer=function(idx){
  _openSV(idx);
  const ov=$("storyViewerOverlay");let db=$("nxStoryDel");
  if(g&&me&&g.uid===me.uid&&g.ids&&g.ids.length){
-  if(!db){db=document.createElement("button");db.id="nxStoryDel";db.textContent="Delete";db.style.cssText="position:absolute;top:14px;right:56px;z-index:9;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer";db.onclick=nxDeleteCurrentSlide;ov.appendChild(db);}
+  if(!db){db=document.createElement("button");db.id="nxStoryDel";db.textContent="Delete";db.style.cssText="position:absolute;top:64px;right:14px;z-index:9;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer";db.onclick=nxDeleteCurrentSlide;ov.appendChild(db);}
   db.style.display="block";
  }else if(db)db.style.display="none";
 };
@@ -7863,6 +7863,29 @@ window.__nxStoryFile=async function(inp){
   await addDoc(collection(db,"stories"),{uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",img,createdAt:serverTimestamp(),expiresAt:now+86400000});
   showToast("Story added");
  }catch(e){showToast("Couldn't add story");}
+};
+// ---- saved posts (Firestore-backed) ----
+let nxSaved=new Set(),nxSaveUnsub=null;
+window.__nxStartSaves=function(){
+ if(nxSaveUnsub){try{nxSaveUnsub();}catch(e){}}
+ nxSaved=new Set();
+ nxSaveUnsub=onSnapshot(query(collection(db,"saves"),where("uid","==",me.uid)),qs=>{
+  nxSaved=new Set(qs.docs.map(d=>d.data().postId));
+  appState.posts.forEach(p=>{p.saved=nxSaved.has(p.id);});
+  try{renderFeed();}catch(e){}
+  try{if(document.getElementById("view-profile").classList.contains("active"))renderProfile();}catch(e){}
+ },()=>{});
+ unsubs.push(nxSaveUnsub);
+};
+window.togglePostSave=async function(postId){
+ if(!me)return;
+ const id=me.uid+"_"+postId;const was=nxSaved.has(postId);
+ const post=appState.posts.find(p=>p.id===postId);
+ if(post){post.saved=!was;try{renderFeed();}catch(e){}}
+ try{
+  if(was){await deleteDoc(doc(db,"saves",id));showToast("Removed from saved");}
+  else{await setDoc(doc(db,"saves",id),{uid:me.uid,postId,createdAt:serverTimestamp()});showToast("Saved to your collection");}
+ }catch(e){if(post){post.saved=was;try{renderFeed();}catch(_){}}showToast("Couldn't save, try again");}
 };
 window.__nxStartStories=function(){
  if(nxStoryUnsub){try{nxStoryUnsub();}catch(e){}}
