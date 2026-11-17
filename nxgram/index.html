@@ -4348,7 +4348,7 @@ About · Help · Press · API · Jobs · Privacy · Terms · Locations · Langua
 
 <span style="font-size:18px; font-weight:700;" id="chatHeaderUsername">nirav_rokde</span>
 
-<button onclick="showToast('New message composer ready')" title="New Message">
+<button onclick="nxNewMessage()" title="New Message">
 
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 
@@ -7724,7 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
- myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();if(window.__nxStartSaves)window.__nxStartSaves();
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();if(window.__nxStartChats)window.__nxStartChats();if(window.__nxStartSaves)window.__nxStartSaves();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7804,8 +7804,98 @@ window.openUserProfile=async function(username){
   profUnsubs.push(onSnapshot(doc(db,col,fid),sn=>{on=sn.exists();btn.textContent=on?onT:off;btn.classList.toggle("on",on);}));
   btn.onclick=async()=>{if(busy)return;busy=true;try{if(on)await deleteDoc(doc(db,col,fid));else{await setDoc(doc(db,col,fid),{follower:me.uid,followee:uid,followerName:me.username,followeeName:lower,createdAt:serverTimestamp()});writeNotif(uid,col==="subs"?"subscribe":"follow",{});}}catch(e){showToast("Couldn't update, try again");}busy=false;};
  });
+ {const mb=document.createElement("button");mb.className="nxFollowBtn";mb.textContent="Message";mb.onclick=()=>nxOpenChatWith(lower);wrap.appendChild(mb);}
 };
 
+// ---- direct messages (Firestore-backed) ----
+let nxChatUnsub=null,nxMsgUnsub=null,nxChatDocs=[];
+const nxCid=(a,b)=>[a,b].sort().join("_");
+function nxMapChats(){
+ const meId=me.uid;
+ appState.chats=nxChatDocs.map(d=>{
+  const other=(d.members||[]).find(u=>u!==meId)||"";
+  const un=(d.names&&d.names[other])||"user";
+  const keep=appState.chats.find(c=>c.id===d.id);
+  const last=d.last?[{from:d.lastFrom===meId?"me":"them",text:esc(d.last)}]:[];
+  return {id:d.id,uid:other,username:un,fullName:un,avatar:avatarFor(un),online:false,unread:!!(d.unread&&d.unread[meId]),messages:(keep&&keep.full&&d.id===activeChatId)?keep.messages:last,full:keep&&keep.full&&d.id===activeChatId,_t:(d.lastAt&&d.lastAt.toMillis&&d.lastAt.toMillis())||Date.now()};
+ }).sort((a,b)=>b._t-a._t);
+}
+window.__nxStartChats=function(){
+ if(nxChatUnsub){try{nxChatUnsub();}catch(e){}}
+ if(nxMsgUnsub){try{nxMsgUnsub();}catch(e){}nxMsgUnsub=null;}
+ activeChatId="";appState.chats=[];nxChatDocs=[];
+ nxChatUnsub=onSnapshot(query(collection(db,"chats"),where("members","array-contains",me.uid)),qs=>{
+  nxChatDocs=qs.docs.map(d=>({id:d.id,...d.data({serverTimestamps:"estimate"})}));
+  nxMapChats();
+  try{updateUnreadBadges();renderChatThreads();if(!appState.chats.find(c=>c.id===activeChatId)){const a=document.getElementById("chatMessagesArea");if(a)a.innerHTML=nxEmptyHint();}else{const t=appState.chats.find(c=>c.id===activeChatId);if(t&&t.unread&&document.getElementById("view-messages").classList.contains("active"))nxMarkRead(t);}}catch(e){}
+ },()=>{});
+ unsubs.push(()=>{try{nxChatUnsub();}catch(e){}if(nxMsgUnsub){try{nxMsgUnsub();}catch(e){}nxMsgUnsub=null;}});
+ try{updateUnreadBadges();renderChatThreads();}catch(e){}
+};
+const nxEmptyHint=()=>'<div style="text-align:center;color:var(--text-secondary);padding:40px 16px;font-size:14px">Tap the pencil icon to message someone.</div>';
+async function nxMarkRead(t){try{await setDoc(doc(db,"chats",t.id),{unread:{[me.uid]:false}},{merge:true});}catch(e){}}
+window.selectChatThread=function(chatId){
+ activeChatId=chatId;
+ const t=appState.chats.find(c=>c.id===chatId);
+ if(nxMsgUnsub){try{nxMsgUnsub();}catch(e){}nxMsgUnsub=null;}
+ if(t){
+  t.unread=false;nxMarkRead(t);
+  nxMsgUnsub=onSnapshot(query(collection(db,"chats",chatId,"messages"),orderBy("createdAt")),qs=>{
+   const th=appState.chats.find(c=>c.id===chatId);if(!th)return;
+   th.messages=qs.docs.map(d=>{const m=d.data({serverTimestamps:"estimate"});return{from:m.from===me.uid?"me":"them",text:esc(m.text||"")};});th.full=true;
+   if(activeChatId===chatId){try{renderActiveChat();}catch(e){}}
+  },()=>{});
+ }
+ try{updateUnreadBadges();renderChatThreads();renderActiveChat();}catch(e){}
+ document.getElementById("view-messages").classList.add("chat-open");
+};
+async function nxSend(chatId,text){
+ const t=appState.chats.find(c=>c.id===chatId);if(!t||!text)return false;
+ try{
+  await setDoc(doc(db,"chats",chatId),{members:[me.uid,t.uid].sort(),names:{[me.uid]:me.username,[t.uid]:t.username},last:text.slice(0,200),lastFrom:me.uid,lastAt:serverTimestamp(),unread:{[me.uid]:false,[t.uid]:true}},{merge:true});
+  await addDoc(collection(db,"chats",chatId,"messages"),{from:me.uid,text:text.slice(0,1000),createdAt:serverTimestamp()});
+  return true;
+ }catch(e){showToast("Couldn't send, try again");return false;}
+}
+window.sendChatMessage=function(e){
+ e.preventDefault();
+ const input=document.getElementById("chatMessageInput");const text=input.value.trim();
+ if(!text||!activeChatId)return;
+ input.value="";nxSend(activeChatId,text);
+};
+window.sharePostToChat=function(postId){
+ const post=appState.posts.find(p=>p.id===postId);const t=appState.chats.find(c=>c.id===activeChatId);
+ if(!post)return;
+ if(!t){showToast("Open a chat in Messages first");return;}
+ nxSend(t.id,"Check out this post by @"+post.username+": \""+String(post.caption||"").replace(/&amp;/g,"&").slice(0,45)+"\"").then(ok=>{if(ok)showToast("Sent to @"+t.username);});
+};
+async function nxOpenChatWith(username){
+ const lower=String(username||"").trim().toLowerCase().replace(/^@/,"");
+ if(!lower){return;}
+ let uid="";
+ try{const s=await getDoc(doc(db,"usernames",lower));if(s.exists())uid=s.data().uid;}catch(e){}
+ if(!uid){showToast("No user named @"+lower);return;}
+ if(uid===me.uid){showToast("That's you!");return;}
+ const id=nxCid(me.uid,uid);
+ if(!appState.chats.find(c=>c.id===id)){
+  appState.chats.unshift({id,uid,username:lower,fullName:lower,avatar:avatarFor(lower),online:false,unread:false,messages:[],full:false,_t:Date.now()});
+  try{await setDoc(doc(db,"chats",id),{members:[me.uid,uid].sort(),names:{[me.uid]:me.username,[uid]:lower},last:"",lastFrom:"",lastAt:serverTimestamp(),unread:{[me.uid]:false,[uid]:false}},{merge:true});}catch(e){showToast("Couldn't start chat");return;}
+ }
+ try{switchView("messages");}catch(e){}
+ selectChatThread(id);
+}
+window.nxNewMessage=function(){
+ const old=document.getElementById("nxNewMsg");if(old)old.remove();
+ const m=document.createElement("div");m.id="nxNewMsg";
+ m.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:14px";
+ m.innerHTML='<div style="background:var(--bg-primary,#fff);color:var(--text-primary,#000);border-radius:14px;width:100%;max-width:340px;padding:16px"><div style="font-weight:700;font-size:16px;margin-bottom:10px;text-align:center">New message</div><input id="nxNmUser" placeholder="Username" autocapitalize="none" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:15px"><div style="display:flex;gap:8px;margin-top:12px"><button id="nxNmX" style="flex:1;padding:10px;border:0;border-radius:8px;background:#eee;color:#000;font-weight:600">Cancel</button><button id="nxNmGo" style="flex:1;padding:10px;border:0;border-radius:8px;background:#0095f6;color:#fff;font-weight:600">Chat</button></div></div>';
+ document.body.appendChild(m);
+ const inp=m.querySelector("#nxNmUser");inp.focus();
+ m.querySelector("#nxNmX").onclick=()=>m.remove();
+ const go=async()=>{const v=inp.value;m.remove();await nxOpenChatWith(v);};
+ m.querySelector("#nxNmGo").onclick=go;inp.onkeydown=e=>{if(e.key==="Enter")go();};
+};
+window.nxOpenChatWith=nxOpenChatWith;
 // ---- stories (Firestore-backed) ----
 let nxStories=[],nxStoryUnsub=null;
 const nxSeenKey=()=>"nxSeenStories_"+(me?me.uid:"anon");
