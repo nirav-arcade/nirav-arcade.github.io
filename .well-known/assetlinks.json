@@ -1,8 +1,14 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.nirav_arcade.nxgram.twa",
-        "sha256_cert_fingerprints": ["8C:E0:2E:9F:28:0D:C9:E9:54:98:9E:66:42:72:F6:C6:CD:E3:B6:71:67:49:23:CA:05:CF:5C:0E:78:13:25:76"]
-      }
-    }]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.nirav_arcade.nxgram.twa",
+      "sha256_cert_fingerprints": [
+        "D8:E5:F2:DE:E2:1D:73:C6:F6:8B:94:BE:8E:64:A6:EE:E0:2C:0D:AD:D6:DA:89:9F:D1:26:35:84:AC:81:19:9C"
+      ]
+    }
+  }
+]
