@@ -7678,7 +7678,7 @@ const app=initializeApp({apiKey:"AIzaSyDcQsaVRFev93JwZVcLcsJ06-ScvLLYh6U",authDo
 const auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 let legacyAvatar=null;try{const ls=JSON.parse(localStorage.getItem("insta_clone_state_v1")||"null");const av=ls&&ls.currentUser&&ls.currentUser.avatar;if(typeof av==="string"&&av.startsWith("data:image/jpeg")&&av.length<200000)legacyAvatar=av;}catch(e){}
-const _si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==="insta_clone_state_v1"){try{const o=JSON.parse(v);o.posts=[];o.exploreExtras=[];v=JSON.stringify(o);}catch(e){}}return _si.call(this,k,v);};
+const _si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==="insta_clone_state_v1"){try{const o=JSON.parse(v);o.posts=[];o.exploreExtras=[];o.stories=[];v=JSON.stringify(o);}catch(e){}}return _si.call(this,k,v);};
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const COLORS=["#f56040","#c13584","#5851db","#0095f6","#2ecc71","#e67e22","#8e44ad"];
 function avatarFor(name){const c=COLORS[(name.charCodeAt(0)+name.length)%COLORS.length];return "data:image/svg+xml;utf8,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='${c}'/><text x='100' y='130' font-size='100' font-family='Arial' font-weight='bold' fill='#fff' text-anchor='middle'>${esc(name[0]||"?").toUpperCase()}</text></svg>`);}
@@ -7724,7 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
- myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7805,6 +7805,78 @@ window.openUserProfile=async function(username){
   btn.onclick=async()=>{if(busy)return;busy=true;try{if(on)await deleteDoc(doc(db,col,fid));else{await setDoc(doc(db,col,fid),{follower:me.uid,followee:uid,followerName:me.username,followeeName:lower,createdAt:serverTimestamp()});writeNotif(uid,col==="subs"?"subscribe":"follow",{});}}catch(e){showToast("Couldn't update, try again");}busy=false;};
  });
 };
+
+// ---- stories (Firestore-backed) ----
+let nxStories=[],nxStoryUnsub=null;
+const nxSeenKey=()=>"nxSeenStories_"+(me?me.uid:"anon");
+function nxGetSeen(){try{return new Set(JSON.parse(localStorage.getItem(nxSeenKey())||"[]"));}catch(e){return new Set();}}
+function nxMarkSeen(ids){const s=nxGetSeen();ids.forEach(i=>s.add(i));try{localStorage.setItem(nxSeenKey(),JSON.stringify([...s].slice(-500)));}catch(e){}}
+function nxGroupStories(){
+ const by={};nxStories.forEach(s=>{if(!s||!s.uid)return;(by[s.uid]=by[s.uid]||[]).push(s);});
+ const seen=nxGetSeen();
+ return Object.keys(by).map(uid=>{const slides=by[uid].sort((a,b)=>((a.createdAt&&a.createdAt.toMillis&&a.createdAt.toMillis())||0)-((b.createdAt&&b.createdAt.toMillis&&b.createdAt.toMillis())||0));const f=slides[0];
+  return {uid,username:f.username||"user",avatar:(typeof f.avatar==="string"&&f.avatar.startsWith("data:"))?f.avatar:avatarFor(f.username||"user"),ids:slides.map(x=>x.id),seen:slides.every(x=>seen.has(x.id)),slides:slides.map(x=>({img:x.img,time:ago(x.createdAt)}))};})
+ .sort((a,b)=>(a.seen?1:0)-(b.seen?1:0));
+}
+function nxSyncStories(){
+ const groups=nxGroupStories();
+ const own=me?groups.find(g=>g.uid===me.uid):null;
+ const ownGroup={id:"own",uid:me?me.uid:"",username:me?me.username:"you",avatar:me&&me.avatar?me.avatar:"",isOwn:true,seen:own?own.seen:true,ids:own?own.ids:[],slides:own?own.slides:[]};
+ appState.stories=[ownGroup,...groups.filter(g=>!me||g.uid!==me.uid)];
+ try{renderStories();}catch(e){}
+}
+window.renderStories=function(){
+ const container=$("storiesTray");if(!container)return;
+ container.innerHTML=appState.stories.map((story,idx)=>{
+  const click=story.isOwn?`onclick="nxOwnStoryClick(event,${idx})"`:`onclick="openStoryViewer(${idx})"`;
+  const av=story.isOwn?(appState.currentUser?appState.currentUser.avatar:""):story.avatar;
+  return `<div class="story-item"><div class="story-ring ${story.isOwn?"own":(story.seen?"seen":"")}" ${click}><img class="story-avatar" src="${av}" alt="${esc(story.username)}">${story.isOwn?'<span class="story-add-badge" onclick="event.stopPropagation();document.getElementById(\'nxStoryFile\').click()">+</span>':""}</div><span class="story-username">${story.isOwn?verifiedUsernameButton(appState.currentUser?appState.currentUser.username:"you","story-profile-link"):verifiedUsernameButton(story.username,"story-profile-link")}</span></div>`;
+ }).join("");
+};
+window.nxOwnStoryClick=function(e,idx){const g=appState.stories[idx];if(g&&g.slides&&g.slides.length)openStoryViewer(idx);else{const f=$("nxStoryFile");if(f)f.click();}};
+const _openSV=window.openStoryViewer;
+window.openStoryViewer=function(idx){
+ const g=appState.stories[idx];if(g&&g.ids)nxMarkSeen(g.ids);
+ _openSV(idx);
+ const ov=$("storyViewerOverlay");let db=$("nxStoryDel");
+ if(g&&me&&g.uid===me.uid&&g.ids&&g.ids.length){
+  if(!db){db=document.createElement("button");db.id="nxStoryDel";db.textContent="Delete";db.style.cssText="position:absolute;top:14px;right:56px;z-index:9;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer";db.onclick=nxDeleteCurrentSlide;ov.appendChild(db);}
+  db.style.display="block";
+ }else if(db)db.style.display="none";
+};
+async function nxDeleteCurrentSlide(){
+ const g=appState.stories[activeStoryUserIdx];if(!g||!g.ids||!g.ids.length)return;
+ const id=g.ids[activeStorySlideIdx];
+ try{await deleteDoc(doc(db,"stories",id));showToast("Story deleted");}catch(e){showToast("Couldn't delete");}
+ try{closeStoryViewer();}catch(e){}
+}
+window.__nxStoryFile=async function(inp){
+ const f=inp.files&&inp.files[0];inp.value="";if(!f||!me)return;
+ const dataUrl=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>res("");r.readAsDataURL(f);});
+ if(!dataUrl){showToast("Couldn't read image");return;}
+ const img=await shrink(dataUrl,640,0.7);
+ if(!img||img.length>900000){showToast("Image too large, try another");return;}
+ try{
+  const now=Date.now();
+  const old=await getDocs(query(collection(db,"stories"),where("uid","==",me.uid)));
+  for(const d of old.docs)if((d.data().expiresAt||0)<now){try{await deleteDoc(d.ref);}catch(e){}}
+  await addDoc(collection(db,"stories"),{uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",img,createdAt:serverTimestamp(),expiresAt:now+86400000});
+  showToast("Story added");
+ }catch(e){showToast("Couldn't add story");}
+};
+window.__nxStartStories=function(){
+ if(nxStoryUnsub){try{nxStoryUnsub();}catch(e){}}
+ nxStoryUnsub=onSnapshot(query(collection(db,"stories"),where("expiresAt",">",Date.now())),qs=>{
+  nxStories=qs.docs.map(d=>({id:d.id,...d.data({serverTimestamps:"estimate"})}));
+  nxSyncStories();
+ },()=>{});
+ unsubs.push(nxStoryUnsub);
+ nxSyncStories();
+};
+(function(){
+ const fi=document.createElement("input");fi.type="file";fi.id="nxStoryFile";fi.accept="image/*";fi.style.display="none";fi.setAttribute("onchange","__nxStoryFile(this)");document.body.appendChild(fi);
+ appState.stories=[];try{renderStories();}catch(e){}
+})();
 
 // ---- people search ----
 let nxUserCache={},nxUsernamesCache=null,nxUsernamesAt=0;
