@@ -7840,7 +7840,7 @@ window.selectChatThread=function(chatId){
  if(nxMsgUnsub){try{nxMsgUnsub();}catch(e){}nxMsgUnsub=null;}
  if(t){
   t.unread=false;nxMarkRead(t);
-  nxMsgUnsub=onSnapshot(collection(db,"chats",chatId,"messages"),qs=>{
+  nxMsgUnsub=onSnapshot(query(collection(db,"dms"),where("cid","==",chatId)),qs=>{
    const th=appState.chats.find(c=>c.id===chatId);if(!th)return;
    th.messages=qs.docs.map(d=>({ts:(d.data({serverTimestamps:"estimate"}).createdAt&&d.data({serverTimestamps:"estimate"}).createdAt.toMillis&&d.data({serverTimestamps:"estimate"}).createdAt.toMillis())||0,d})).sort((a,b)=>a.ts-b.ts).map(x=>{const m=x.d.data({serverTimestamps:"estimate"});return{from:m.from===me.uid?"me":"them",text:esc(m.text||"")};});th.full=true;
    if(activeChatId===chatId){try{renderActiveChat();}catch(e){}}
@@ -7853,7 +7853,7 @@ async function nxSend(chatId,text){
  const t=appState.chats.find(c=>c.id===chatId);if(!t||!text)return false;
  try{
   await setDoc(doc(db,"chats",chatId),{members:[me.uid,t.uid].sort(),names:{[me.uid]:me.username,[t.uid]:t.username},last:text.slice(0,200),lastFrom:me.uid,lastAt:serverTimestamp(),unread:{[me.uid]:false,[t.uid]:true}},{merge:true});
-  await addDoc(collection(db,"chats",chatId,"messages"),{from:me.uid,text:text.slice(0,1000),createdAt:serverTimestamp()});
+  await addDoc(collection(db,"dms"),{cid:chatId,members:[me.uid,t.uid].sort(),from:me.uid,text:text.slice(0,1000),createdAt:serverTimestamp()});
   return true;
  }catch(e){showToast("Couldn't send, try again");return false;}
 }
