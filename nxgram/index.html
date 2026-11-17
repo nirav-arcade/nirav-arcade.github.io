@@ -7724,7 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
- myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7802,9 +7802,17 @@ window.openUserProfile=async function(username){
   const btn=document.createElement("button");btn.className="nxFollowBtn";btn.textContent=off;wrap.appendChild(btn);
   const fid=me.uid+"_"+uid;let on=false,busy=false;
   profUnsubs.push(onSnapshot(doc(db,col,fid),sn=>{on=sn.exists();btn.textContent=on?onT:off;btn.classList.toggle("on",on);}));
-  btn.onclick=async()=>{if(busy)return;busy=true;try{if(on)await deleteDoc(doc(db,col,fid));else await setDoc(doc(db,col,fid),{follower:me.uid,followee:uid,followerName:me.username,followeeName:lower,createdAt:serverTimestamp()});}catch(e){showToast("Couldn't update, try again");}busy=false;};
+  btn.onclick=async()=>{if(busy)return;busy=true;try{if(on)await deleteDoc(doc(db,col,fid));else{await setDoc(doc(db,col,fid),{follower:me.uid,followee:uid,followerName:me.username,followeeName:lower,createdAt:serverTimestamp()});writeNotif(uid,col==="subs"?"subscribe":"follow",{});}}catch(e){showToast("Couldn't update, try again");}busy=false;};
  });
 };
+
+// ---- notifications ----
+let notifsRaw=[];
+function timeAgo(ts){if(!ts||!ts.toMillis)return "";const s=(Date.now()-ts.toMillis())/1000;if(s<60)return "now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d";}
+async function writeNotif(toUid,type,extra){try{if(!toUid||!me||toUid===me.uid)return;await addDoc(collection(db,"notifs"),{toUid:toUid,fromUid:me.uid,fromUsername:me.username,fromAvatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",type:type,...(extra||{}),createdAt:serverTimestamp()});}catch(e){}}
+function startNotifListener(){unsubs.push(onSnapshot(query(collection(db,"notifs"),where("toUid","==",me.uid)),qs=>{notifsRaw=qs.docs.map(d=>({id:d.id,...d.data()}));notifsRaw.sort((a,b)=>((b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0)-(a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0)));try{renderNotifications();}catch(e){}}));}
+window.__nxStartNotifs=startNotifListener;
+window.renderNotifications=function(){const c=$("notifListContainer");if(!c)return;c.innerHTML=notifsRaw.length?notifsRaw.map(n=>`<div class="notif-row"><img class="notif-user-pic" src="${(typeof n.fromAvatar==="string"&&n.fromAvatar.startsWith("data:image/jpeg"))?n.fromAvatar:avatarFor(n.fromUsername||"?")}"><div class="notif-text"><strong>${verifiedUsernameButton(n.fromUsername,"notification-profile-link")}</strong> ${n.type==="like"?"liked your post.":n.type==="comment"?("commented: "+esc(n.text||"")):n.type==="subscribe"?"subscribed to you.":"started following you."} <span style="color:var(--text-secondary);"> ${timeAgo(n.createdAt)}</span></div>${n.postImg?`<img class="notif-post-thumb" src="${n.postImg}">`:""}</div>`).join(""):'<div style="text-align:center;color:#8e8e8e;padding:30px">No notifications yet.</div>';};
 
 // ---- verified (blue tick), admin-controlled ----
 const vSet=new Set();
@@ -7821,10 +7829,10 @@ onAuthStateChanged(auth,async u=>{if(u&&!me){try{await boot(u);}catch(e){console
 window.saveState=function(){};
 async function flip(id){const r=doc(db,"posts",id);const p=postsRaw.find(x=>x.id===id);if(!p)return;const has=(p.likedBy||[]).includes(me.uid);
  p.likedBy=has?p.likedBy.filter(x=>x!==me.uid):[...(p.likedBy||[]),me.uid];rebuild();
- try{await updateDoc(r,{likedBy:has?arrayRemove(me.uid):arrayUnion(me.uid)});}catch(e){showToast("Couldn't like, try again");}}
+ try{await updateDoc(r,{likedBy:has?arrayRemove(me.uid):arrayUnion(me.uid)});if(!has)writeNotif(p.uid,"like",{postId:id,postImg:(typeof p.image==="string"&&p.image.startsWith("data:image/jpeg"))?p.image:""});}catch(e){showToast("Couldn't like, try again");}}
 window.togglePostLike=id=>flip(id);
 window.handleDoubleTapLike=id=>{const h=document.getElementById("dtHeart_"+id);if(h){h.classList.remove("animate");void h.offsetWidth;h.classList.add("animate");}const p=postsRaw.find(x=>x.id===id);if(p&&!(p.likedBy||[]).includes(me.uid))setTimeout(()=>flip(id),450);};
-async function addC(id,text){try{await addDoc(collection(db,"posts",id,"comments"),{uid:me.uid,username:me.username,text:text.slice(0,500),createdAt:serverTimestamp()});await updateDoc(doc(db,"posts",id),{commentCount:increment(1)});}catch(e){showToast("Couldn't comment, try again");}}
+async function addC(id,text){try{await addDoc(collection(db,"posts",id,"comments"),{uid:me.uid,username:me.username,text:text.slice(0,500),createdAt:serverTimestamp()});await updateDoc(doc(db,"posts",id),{commentCount:increment(1)});const p=postsRaw.find(x=>x.id===id);if(p)writeNotif(p.uid,"comment",{postId:id,text:text.slice(0,100)});}catch(e){showToast("Couldn't comment, try again");}}
 window.submitInlineComment=function(e,id){e.preventDefault();const i=document.getElementById("commentInput_"+id);const t=i.value.trim();if(!t)return;i.value="";addC(id,t);};
 window.submitModalComment=function(e,id){e.preventDefault();const i=document.getElementById("modalCommentInput");const t=i.value.trim();if(!t)return;i.value="";addC(id,t).then(()=>setTimeout(()=>openPostDetail(id),400));};
 function shrink(src,max=900,q=0.72){return new Promise(res=>{if(!src.startsWith("data:"))return res(src);const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",q));};im.onerror=()=>res("");im.src=src;});}
