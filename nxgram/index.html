@@ -7840,11 +7840,11 @@ window.selectChatThread=function(chatId){
  if(nxMsgUnsub){try{nxMsgUnsub();}catch(e){}nxMsgUnsub=null;}
  if(t){
   t.unread=false;nxMarkRead(t);
-  nxMsgUnsub=onSnapshot(query(collection(db,"chats",chatId,"messages"),orderBy("createdAt")),qs=>{
+  nxMsgUnsub=onSnapshot(collection(db,"chats",chatId,"messages"),qs=>{
    const th=appState.chats.find(c=>c.id===chatId);if(!th)return;
-   th.messages=qs.docs.map(d=>{const m=d.data({serverTimestamps:"estimate"});return{from:m.from===me.uid?"me":"them",text:esc(m.text||"")};});th.full=true;
+   th.messages=qs.docs.map(d=>({ts:(d.data({serverTimestamps:"estimate"}).createdAt&&d.data({serverTimestamps:"estimate"}).createdAt.toMillis&&d.data({serverTimestamps:"estimate"}).createdAt.toMillis())||0,d})).sort((a,b)=>a.ts-b.ts).map(x=>{const m=x.d.data({serverTimestamps:"estimate"});return{from:m.from===me.uid?"me":"them",text:esc(m.text||"")};});th.full=true;
    if(activeChatId===chatId){try{renderActiveChat();}catch(e){}}
-  },()=>{});
+  },err=>{try{showToast("DM read error: "+err.code);}catch(e){}});
  }
  try{updateUnreadBadges();renderChatThreads();renderActiveChat();}catch(e){}
  document.getElementById("view-messages").classList.add("chat-open");
