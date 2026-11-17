@@ -7678,7 +7678,7 @@ const app=initializeApp({apiKey:"AIzaSyDcQsaVRFev93JwZVcLcsJ06-ScvLLYh6U",authDo
 const auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 let legacyAvatar=null;try{const ls=JSON.parse(localStorage.getItem("insta_clone_state_v1")||"null");const av=ls&&ls.currentUser&&ls.currentUser.avatar;if(typeof av==="string"&&av.startsWith("data:image/jpeg")&&av.length<200000)legacyAvatar=av;}catch(e){}
-const _si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==="insta_clone_state_v1"){try{const o=JSON.parse(v);o.posts=[];o.exploreExtras=[];o.stories=[];v=JSON.stringify(o);}catch(e){}}return _si.call(this,k,v);};
+const _si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==="insta_clone_state_v1"){try{const o=JSON.parse(v);o.posts=[];o.exploreExtras=[];o.stories=[];o.reels=[];v=JSON.stringify(o);}catch(e){}}return _si.call(this,k,v);};
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const COLORS=["#f56040","#c13584","#5851db","#0095f6","#2ecc71","#e67e22","#8e44ad"];
 function avatarFor(name){const c=COLORS[(name.charCodeAt(0)+name.length)%COLORS.length];return "data:image/svg+xml;utf8,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='${c}'/><text x='100' y='130' font-size='100' font-family='Arial' font-weight='bold' fill='#fff' text-anchor='middle'>${esc(name[0]||"?").toUpperCase()}</text></svg>`);}
@@ -7724,7 +7724,7 @@ async function boot(user){
  appState.exploreExtras=[];appState.suggestions=[];appState.notifications=[];
  document.body.classList.remove("auth-locked");$("authPassword").value="";window.__nxIsAdmin=REPO_VERIFIED_USERS.map(x=>x.toLowerCase()).includes(me.username);$("nxMembersBtn").style.display="block";
  unsubs.forEach(f=>f());unsubs=[];postsRaw=[];commentsBy={};
- myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();if(window.__nxStartChats)window.__nxStartChats();if(window.__nxStartSaves)window.__nxStartSaves();
+ myFollowers=0;mySubs=0;if(window.__nxStartFollow)window.__nxStartFollow();if(window.__nxStartVerified)window.__nxStartVerified();if(window.__nxStartNotifs)window.__nxStartNotifs();if(window.__nxStartStories)window.__nxStartStories();if(window.__nxStartChats)window.__nxStartChats();if(window.__nxStartReels)window.__nxStartReels();if(window.__nxStartSaves)window.__nxStartSaves();
  rebuild();
  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),qs=>{
   postsRaw=qs.docs.map(x=>({id:x.id,...x.data({serverTimestamps:"estimate"})}));
@@ -7807,6 +7807,82 @@ window.openUserProfile=async function(username){
  {const mb=document.createElement("button");mb.className="nxFollowBtn";mb.textContent="Message";mb.onclick=()=>nxOpenChatWith(lower);wrap.appendChild(mb);}
 };
 
+// ---- reels (Firestore-backed, short clips) ----
+let nxReelUnsub=null;
+window.renderReels=function(){
+ const container=$("reelsFeedContainer");if(!container)return;
+ container.innerHTML=appState.reels.map(reel=>{
+  const media=reel.video?'<video class="reel-bg-media" src="'+reel.video+'" poster="'+(reel.poster||"")+'" loop playsinline muted autoplay onclick="nxReelSound(this)"></video>':'<img class="reel-bg-media" src="'+reel.image+'" alt="Reel">';
+  return '<div class="reel-card">'+media+
+  '<div class="reel-gradient"></div><div class="reel-bottom-info"><div class="reel-user-row"><img src="'+reel.avatar+'" alt="'+esc(reel.username)+'"><span style="font-weight:600; font-size:14px;">'+verifiedUsernameButton(reel.username,"reel-profile-link")+'</span></div><div class="reel-caption">'+esc(reel.caption||"")+'</div></div>'+
+  '<div class="reel-side-actions"><button class="reel-action-unit" onclick="toggleReelLike(\''+reel.id+'\')"><svg width="28" height="28" viewBox="0 0 24 24" fill="'+(reel.liked?'#ff3040':'none')+'" stroke="'+(reel.liked?'#ff3040':'#ffffff')+'" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg><span>'+reel.likes+'</span></button></div></div>';
+ }).join("");
+ const oldAdd=$("nxAddReel");if(oldAdd)oldAdd.remove();
+ const add=document.createElement("button");
+ add.id="nxAddReel";
+ add.textContent="+ Post reel";
+ add.style.cssText="position:fixed;bottom:90px;right:14px;z-index:50;background:#0095f6;color:#fff;border:0;border-radius:20px;padding:10px 16px;font-weight:700;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.35)";
+ add.onclick=()=>{const f=$("nxReelFile");if(f)f.click();};
+ const sec=$("view-reels");if(sec&&me)sec.appendChild(add);
+};
+window.nxReelSound=function(v){v.muted=!v.muted;if(!v.muted)v.play().catch(()=>{});};
+window.__nxStartReels=function(){
+ if(nxReelUnsub){try{nxReelUnsub();}catch(e){}}
+ nxReelUnsub=onSnapshot(collection(db,"reels"),qs=>{
+  appState.reels=qs.docs.map(d=>({id:d.id,...d.data({serverTimestamps:"estimate"})})).sort((a,b)=>((b.createdAt&&b.createdAt.toMillis&&b.createdAt.toMillis())||0)-((a.createdAt&&a.createdAt.toMillis&&a.createdAt.toMillis())||0)).map(r=>({id:r.id,username:r.username||"user",avatar:(typeof r.avatar==="string"&&r.avatar.startsWith("data:"))?r.avatar:avatarFor(r.username||"user"),caption:r.caption||"",video:r.video||"",poster:r.poster||"",image:r.poster||"",likes:(r.likedBy||[]).length,liked:me&&(r.likedBy||[]).includes(me.uid),commentsCount:0,audio:""}));
+  try{renderReels();}catch(e){}
+ },()=>{});
+ unsubs.push(nxReelUnsub);
+};
+async function nxReelFromFile(file){
+ if(typeof MediaRecorder==="undefined"){showToast("This browser can't process video");return null;}
+ const url=URL.createObjectURL(file);
+ const v=document.createElement("video");v.src=url;v.playsInline=true;v.volume=0;v.preload="auto";
+ await new Promise((res,rej)=>{v.onloadedmetadata=res;v.onerror=()=>rej(new Error("bad video"));setTimeout(()=>rej(new Error("timeout")),15000);});
+ const dur=Math.min(v.duration||0,12);
+ if(!dur||dur<0.5){URL.revokeObjectURL(url);showToast("Video too short");return null;}
+ const W=360,H=Math.round(360*(v.videoHeight/v.videoWidth))&~1||640;
+ const c=document.createElement("canvas");c.width=W;c.height=H;
+ const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,W,H);
+ const cs=c.captureStream?c.captureStream(10):null;
+ if(!cs){URL.revokeObjectURL(url);showToast("This browser can't process video");return null;}
+ const tracks=[...cs.getVideoTracks()];
+ try{const vs=v.captureStream?v.captureStream():(v.mozCaptureStream?v.mozCaptureStream():null);if(vs)vs.getAudioTracks().forEach(t=>tracks.push(t));}catch(e){}
+ const st=new MediaStream(tracks);
+ let mime="video/webm;codecs=vp9,opus";
+ if(!MediaRecorder.isTypeSupported(mime)){mime="video/webm";if(!MediaRecorder.isTypeSupported(mime)){URL.revokeObjectURL(url);showToast("This browser can't process video");return null;}}
+ const rec=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:170000,audioBitsPerSecond:48000});
+ const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+ let drawing=true;
+ (function draw(){if(!drawing)return;try{x.drawImage(v,0,0,W,H);}catch(e){}requestAnimationFrame(draw);})();
+ await v.play().catch(()=>{});
+ rec.start(250);
+ await new Promise(r=>setTimeout(r,dur*1000));
+ const done=new Promise(r=>{rec.onstop=r;});
+ drawing=false;try{rec.stop();}catch(e){}
+ await done;
+ v.pause();URL.revokeObjectURL(url);
+ const blob=new Blob(chunks,{type:"video/webm"});
+ if(!blob.size||blob.size>650000){showToast("Clip came out too big, try a shorter one");return null;}
+ const video=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>res("");r.readAsDataURL(blob);});
+ const poster=c.toDataURL("image/jpeg",0.55);
+ return {video,poster,dur};
+}
+window.__nxReelFile=async function(inp){
+ const f=inp.files&&inp.files[0];inp.value="";if(!f||!me)return;
+ showToast("Processing clip, wait...");
+ let out=null;
+ try{out=await nxReelFromFile(f);}catch(e){showToast("Couldn't read that video");return;}
+ if(!out)return;
+ const caption=prompt("Caption for your reel:","")||"";
+ try{
+  await addDoc(collection(db,"reels"),{uid:me.uid,username:me.username,avatar:(typeof me.avatar==="string"&&me.avatar.startsWith("data:image/jpeg"))?me.avatar:"",video:out.video,poster:out.poster,caption:caption.slice(0,300),createdAt:serverTimestamp(),likedBy:[]});
+  showToast("Reel posted");
+ }catch(e){showToast("Couldn't post reel");}
+};
+try{
+ const rf=document.createElement("input");rf.type="file";rf.id="nxReelFile";rf.accept="video/*";rf.style.display="none";rf.setAttribute("onchange","__nxReelFile(this)");document.body.appendChild(rf);
+}catch(e){}
 // ---- direct messages (Firestore-backed) ----
 let nxChatUnsub=null,nxMsgUnsub=null,nxChatDocs=[];
 const nxCid=(a,b)=>[a,b].sort().join("_");
